@@ -20,6 +20,9 @@ class EnvironmentVariables {
   @IsInt()
   PORT: number = 3000;
 
+  /** Swagger (/docs, /docs-json) is on outside production; "true" also turns it on in production. */
+  @IsOptional() @IsIn(['true', 'false']) SWAGGER_ENABLED?: string;
+
   /** Full connection URL (e.g. Render's "External Database URL"). When set, DB_HOST... are not needed. */
   @IsOptional() @IsString() DATABASE_URL?: string;
   @ValidateIf((o: EnvironmentVariables) => !o.DATABASE_URL)
@@ -105,6 +108,8 @@ class EnvironmentVariables {
 export function validateEnv(config: Record<string, unknown>) {
   const normalised = {
     ...config,
+    // An empty value (`SWAGGER_ENABLED=`) means "not set".
+    SWAGGER_ENABLED: config.SWAGGER_ENABLED || undefined,
     WEATHER_POLLING_ENABLED: config.WEATHER_POLLING_ENABLED === 'true',
     ENGINE_KEEPALIVE: config.ENGINE_KEEPALIVE === 'true',
     ENGINE_SUPPORTS_HOOD: config.ENGINE_SUPPORTS_HOOD === 'true',

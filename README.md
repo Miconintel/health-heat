@@ -41,8 +41,14 @@ Everyone signs in with an **ID and a PIN** (`POST /api/v1/auth/login` with `{ "l
 - After 5 wrong PINs an account is locked for 5 minutes. An admin can set a new PIN, which also unlocks it, with `PUT /api/v1/users/:id/pin`.
 
 - API: `http://localhost:3000/api/v1` (set `PORT` if 3000 is taken)
-- Swagger: `http://localhost:3000/docs` (non-production only)
+- Swagger: `http://localhost:3000/docs` (off when `NODE_ENV=production`, unless `SWAGGER_ENABLED=true`)
 - Response examples in Swagger: endpoints that return plain objects get their schema and example from `src/docs/response-examples.ts`. After changing a response, refresh it against a **local** server on a freshly seeded demo database with `WEARABLES_ENABLED=true`: `npm run docs:examples -- http://localhost:3000/api/v1`, then reseed (it creates test data). It refuses non-localhost URLs.
+
+## Deploying on Render
+
+- **Build Command:** `npm install --include=dev && npm run build`. The build needs the Nest CLI and TypeScript, which are dev dependencies; with `NODE_ENV=production` a plain `npm install` skips them and the build fails with `nest: not found`.
+- **Start Command:** `npm run start:prod` (runs the compiled `dist/main`; `npm start` recompiles at startup and runs out of memory on the free plan).
+- Environment: every variable in `.env.example`, with the real values. `SWAGGER_ENABLED=true` keeps `/docs` on when `NODE_ENV=production`.
 
 ## Demo day (Render free plan)
 
@@ -173,6 +179,7 @@ workers · shifts/breaks · PPE · precaution ─┼─► risk-engine (orchestr
 | --- | --- | --- |
 | `OPEN_METEO_AIR_QUALITY_URL` | `https://air-quality-api.open-meteo.com/v1/air-quality` | Dust and PM10 for hazards |
 | `CORS_ORIGINS` | `https://heat-guard-nine.vercel.app,http://localhost:5173,https://heat-guard-*-ahmads-projects-727aea25.vercel.app` | Browser origins allowed to call the API. `*` matches one part of a host name (no dots); the last entry allows the frontend team's Vercel previews |
+| `SWAGGER_ENABLED` | (unset) | Swagger at `/docs` and `/docs-json` is on unless `NODE_ENV=production`. Set `true` to keep it on in production (the frontend reads `/docs-json`) |
 | `ENGINE_BASE_URL` | `https://heatguard-ai-engine.onrender.com` | |
 | `ENGINE_API_KEY` | (required) | From the engine owner |
 | `ENGINE_TIMEOUT_MS` | `60000` | A sleeping Render instance takes 20–60 s to wake |
