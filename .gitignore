@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+.env
+*.log
+.env.backup*
+
+# Team handover documents (kept locally, not in the repo)
+heat ai/
