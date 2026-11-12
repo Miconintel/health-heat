@@ -5,7 +5,11 @@
 
 export type EngineWorkload = 'light' | 'moderate' | 'heavy' | 'very_heavy';
 export type EnginePpe =
-  'standard' | 'coverall' | 'chemical_resistant' | 'impermeable';
+  | 'standard'
+  | 'coverall'
+  | 'double_layer'
+  | 'chemical_resistant'
+  | 'impermeable';
 export type EnginePrecaution = 'standard' | 'enhanced' | 'high_priority';
 export type EngineWbgtSource = 'measured' | 'estimated';
 export type EngineLanguageCode = 'en' | 'ha' | 'yo' | 'ig';
@@ -36,10 +40,7 @@ export interface AssessWorkerRequest {
   minutes_since_last_break: number;
   language?: EngineLanguageCode;
   last_known?: LastKnownWbgt | null;
-  /**
-   * PROPOSED, not in engine v0.1.0. Only sent when ENGINE_SUPPORTS_HOOD=true,
-   * because the engine rejects unknown fields (additionalProperties: false → 422).
-   */
+  /** Hood worn on top of `ppe` (+1 °C, also on impermeable). Sent when ENGINE_SUPPORTS_HOOD is on. */
   hood?: boolean;
   /**
    * PROPOSED (request #5): wearable band summary of the last 30 minutes.
@@ -75,7 +76,7 @@ export interface ForecastRequest {
   minutes_exposed: number;
   minutes_since_last_break: number;
   language?: EngineLanguageCode;
-  /** PROPOSED: see AssessWorkerRequest.hood. */
+  /** See AssessWorkerRequest.hood. */
   hood?: boolean;
   /** 1–24 entries, oldest first, no repeats. */
   hours: ForecastHour[];

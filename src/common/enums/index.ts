@@ -37,6 +37,8 @@ export enum RiskLevel {
 export enum EnginePpeClass {
   STANDARD = 'standard',
   COVERALL = 'coverall',
+  /** Double-layer woven clothing (ACGIH +3 °C). */
+  DOUBLE_LAYER = 'double_layer',
   CHEMICAL_RESISTANT = 'chemical_resistant',
   IMPERMEABLE = 'impermeable',
 }

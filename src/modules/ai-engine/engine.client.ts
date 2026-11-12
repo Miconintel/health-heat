@@ -34,7 +34,7 @@ export class EngineClient {
   private readonly baseUrl: string;
   private readonly apiKey: string;
   private readonly timeoutMs: number;
-  /** Engine accepts the (proposed) `hood` field. Off until the engine ships it. */
+  /** Send the `hood` field (on unless ENGINE_SUPPORTS_HOOD=false). */
   readonly supportsHood: boolean;
   /** WBGT comes from the engine's /v1/wbgt route (on unless ENGINE_WBGT_ENABLED=false). */
   readonly wbgtEnabled: boolean;
@@ -48,7 +48,7 @@ export class EngineClient {
       .replace(/\/+$/, '');
     this.apiKey = config.getOrThrow<string>('ENGINE_API_KEY');
     this.timeoutMs = config.get<number>('ENGINE_TIMEOUT_MS') ?? 60_000;
-    this.supportsHood = config.get<boolean>('ENGINE_SUPPORTS_HOOD') === true;
+    this.supportsHood = config.get<boolean>('ENGINE_SUPPORTS_HOOD') !== false;
     this.wbgtEnabled = config.get<boolean>('ENGINE_WBGT_ENABLED') !== false;
     this.supportsWearables =
       config.get<boolean>('WEARABLES_ENABLED') === true &&

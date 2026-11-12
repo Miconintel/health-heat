@@ -118,6 +118,24 @@ describe('enginePpeFor', () => {
   });
 });
 
+describe('enginePpeFor: double_layer (engine, 12 Nov)', () => {
+  it('ranks double-layer (+3 °C) above chemical-resistant (+1) and below impermeable (+11)', () => {
+    const c = (engineClass: EnginePpeClass) => ({ engineClass });
+    expect(
+      enginePpeFor([
+        c(EnginePpeClass.CHEMICAL_RESISTANT),
+        c(EnginePpeClass.DOUBLE_LAYER),
+      ]),
+    ).toBe('double_layer');
+    expect(
+      enginePpeFor([
+        c(EnginePpeClass.DOUBLE_LAYER),
+        c(EnginePpeClass.IMPERMEABLE),
+      ]),
+    ).toBe('impermeable');
+  });
+});
+
 describe('engineLanguage', () => {
   it('keeps supported languages and sends anything else as English', () => {
     expect(engineLanguage('ha')).toBe('ha');
@@ -271,7 +289,7 @@ describe('fallbackAssessment', () => {
   });
 });
 
-describe('hood (proposed engine field)', () => {
+describe('hood (engine field, live since 12 Nov)', () => {
   const items = [{ engineAddon: EnginePpeAddon.HOOD }, { engineAddon: null }];
 
   it('flags a hood the engine cannot count yet', () => {
@@ -293,6 +311,24 @@ describe('hood (proposed engine field)', () => {
       t('11:10'),
     );
     expect('hood' in req).toBe(false);
+  });
+
+  it('sends `hood` with impermeable suits too (the engine adds it: 11 + 1)', () => {
+    const c = ctx({
+      ppe: 'impermeable',
+      addons: { hood: true, hoodSupported: true },
+    });
+    const req = buildAssessRequest(
+      c,
+      reading(t('11:00'), 29, 27),
+      null,
+      t('11:10'),
+    );
+    expect(req.ppe).toBe('impermeable');
+    expect(req.hood).toBe(true);
+    expect(
+      ppeAddonsFor([{ engineAddon: EnginePpeAddon.HOOD }], true).notModelled,
+    ).toEqual([]);
   });
 
   it('sends `hood` on assess and forecast once supported', () => {

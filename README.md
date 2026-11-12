@@ -188,7 +188,7 @@ workers · shifts/breaks · PPE · precaution ─┼─► risk-engine (orchestr
 | `ACCLIMATIZATION_ABSENCE_DAYS` | `7` | A worker with no shift for this many days starts acclimatising again (14 days); the change is audited. `0` turns it off |
 | `WEARABLES_ENABLED` | `false` | Band feature: pairing, readings, "Your band", supervisor connected count |
 | `ENGINE_SUPPORTS_WEARABLES` | `false` | Send band summaries to the engine (engine request #5); needs `WEARABLES_ENABLED` too |
-| `ENGINE_SUPPORTS_HOOD` | `false` | Send the `hood` field. Turn on when the engine accepts it, because it 422s on unknown fields |
+| `ENGINE_SUPPORTS_HOOD` | `true` | Send the `hood` field (live in the engine since 12 Nov). `false` = don't send it; hooded workers are then flagged `ppeNotModelled: ["hood"]` |
 | `WEATHER_POLLING_ENABLED` | `false` | Hourly weather refresh plus 15-minute reassessment |
 
 ## Open items with the AI team
@@ -197,12 +197,8 @@ workers · shifts/breaks · PPE · precaution ─┼─► risk-engine (orchestr
   - Each site refresh sends now plus 12 forecast hours of weather in one call. We store `wbgt_c` (full sun) as `wbgtSunC`, labelled `engine/liljegren_2008`. There is no shade value yet, so every worker gets the sun value (the cautious choice).
   - A null weather value is sent as null; that hour comes back `wbgt_c: null` and reaches the risk engine as null (its safe fallback).
   - If the call fails, the refresh fails and existing readings are kept. The risk engine then uses `last_known`, or its own staleness rule. There is no second formula.
-- **Hoods: our side is ready.**
-  - PPE items flagged `engineAddon: hood` are detected per worker.
-  - While `ENGINE_SUPPORTS_HOOD=false` (default), we don't send the field, because the engine rejects unknown fields with a 422. Instead the assessment records `ppeNotModelled: ["hood"]`, which is shown to the worker and supervisor, and the supervisor PPE-review recommendation fires.
-  - Once the engine accepts it, set `ENGINE_SUPPORTS_HOOD=true` and we send `hood: true|false` on assess and forecast. No code change is needed.
-  - Proposal for the engine (see below).
-- **Double-layer clothing** (+3 °C in ACGIH) has no engine class, so it is left out of the catalogue rather than under-rated.
+- **Hoods: live (12 Nov).** PPE items flagged `engineAddon: hood` are detected per worker, and we send `hood: true|false` on assess and forecast. The engine adds +1 °C on top of the clothing, including impermeable suits (11 + 1 = 12), so we send it whenever a hood is worn, built into a suit or not. Hard hats don't count. With `ENGINE_SUPPORTS_HOOD=false` we stop sending it and flag `ppeNotModelled: ["hood"]` instead.
+- **Double-layer clothing: live (12 Nov).** Engine class `double_layer` (+3 °C), catalogue item `double_layer_clothing`. When a worker wears several clothing items we send the most heat-retaining: standard, coverall, chemical_resistant, double_layer, impermeable. Needs the `DoubleLayerClothing` migration, then `npm run seed` to add the item.
 
 ### `/v1/wbgt` contract (what the backend calls)
 
@@ -233,14 +229,8 @@ Source of truth: the engine's live schema, `https://heatguard-ai-engine.onrender
 
 Response: `{ "method": "liljegren_2008", "hours": [{ "time", "wbgt_c", "wbgt_source": "estimated", "data_quality", "globe_c", "natural_wet_bulb_c", "wind_2m_ms" }] }`. We match hours by instant and read only `wbgt_c`.
 
-### Proposal to the engine owner: `hood`
+### Other notes
 
-> Add an optional boolean `hood` (default `false`) to `AssessWorkerRequest` and `ForecastRequest`.
-> When `true`, add the ACGIH hood adjustment (about +1 °C WBGT) on top of the `ppe` clothing value,
-> and list it in `GET /v1/rules` with its source like the other adjustments. Helmets don't need a field:
-> their effect is about 0. Please also confirm whether the +11 °C for `impermeable` already assumes a
-> hood, so a sealed suit isn't counted twice. The backend is ready and will start sending it when you
-> confirm.
 - **Languages.** The engine supports en, ha, yo and ig. Others, e.g. Nigerian Pidgin, are sent as `en`. When the engine adds `pcm`, add it to `EngineLanguage` in `src/common/enums/index.ts` and generate a migration, because the stored language column is a database enum.
 - **Hour-by-hour shift plans.** Forecast workload repeats the current task until shift plans exist.
 

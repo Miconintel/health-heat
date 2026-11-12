@@ -84,10 +84,10 @@ class EnvironmentVariables {
   @IsOptional()
   ENGINE_KEEPALIVE: boolean = false;
 
-  /** Turn on once the engine accepts the `hood` field; until then sending it would cause 422s. */
+  /** Send the `hood` field (live in the engine since 12 Nov). On by default; false = don't send it. */
   @IsBoolean()
   @IsOptional()
-  ENGINE_SUPPORTS_HOOD: boolean = false;
+  ENGINE_SUPPORTS_HOOD: boolean = true;
 
   /** WBGT from the engine's POST /v1/wbgt (on by default). Off = readings stored without WBGT. */
   @IsBoolean()
@@ -121,7 +121,7 @@ export function validateEnv(config: Record<string, unknown>) {
     SWAGGER_ENABLED: config.SWAGGER_ENABLED || undefined,
     WEATHER_POLLING_ENABLED: config.WEATHER_POLLING_ENABLED === 'true',
     ENGINE_KEEPALIVE: config.ENGINE_KEEPALIVE === 'true',
-    ENGINE_SUPPORTS_HOOD: config.ENGINE_SUPPORTS_HOOD === 'true',
+    ENGINE_SUPPORTS_HOOD: config.ENGINE_SUPPORTS_HOOD !== 'false',
     ENGINE_WBGT_ENABLED: config.ENGINE_WBGT_ENABLED !== 'false',
     WEARABLES_ENABLED: config.WEARABLES_ENABLED === 'true',
     ENGINE_SUPPORTS_WEARABLES: config.ENGINE_SUPPORTS_WEARABLES === 'true',

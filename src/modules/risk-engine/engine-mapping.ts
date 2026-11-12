@@ -83,10 +83,16 @@ export function exposureMinutes(
 
 // ---- PPE / language ------------------------------------------------------
 
-const PPE_ORDER: EnginePpeClass[] = [
+/**
+ * Clothing classes from least to most heat-retaining, by the engine's
+ * clothing_adjustment_c (GET /v1/rules): standard 0, coverall 0, chemical_resistant 1,
+ * double_layer 3, impermeable 11 °C.
+ */
+export const PPE_ORDER: EnginePpeClass[] = [
   EnginePpeClass.STANDARD,
   EnginePpeClass.COVERALL,
   EnginePpeClass.CHEMICAL_RESISTANT,
+  EnginePpeClass.DOUBLE_LAYER,
   EnginePpeClass.IMPERMEABLE,
 ];
 

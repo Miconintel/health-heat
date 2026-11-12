@@ -47,7 +47,7 @@ import {
   displayLevel,
   SiteHeatService,
 } from '../risk-engine/site-heat.service';
-import { LEVEL_NAME } from '../risk-engine/engine-mapping';
+import { LEVEL_NAME, PPE_ORDER } from '../risk-engine/engine-mapping';
 import {
   actionsFollowed,
   actionsOnTime,
@@ -68,12 +68,6 @@ const WORKLOAD_ORDER = [
   WorkloadLevel.MODERATE,
   WorkloadLevel.HEAVY,
   WorkloadLevel.VERY_HEAVY,
-];
-const PPE_ORDER = [
-  EnginePpeClass.STANDARD,
-  EnginePpeClass.COVERALL,
-  EnginePpeClass.CHEMICAL_RESISTANT,
-  EnginePpeClass.IMPERMEABLE,
 ];
 
 const SUPERVISOR_ALERT_CODES = [

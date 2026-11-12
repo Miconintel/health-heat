@@ -47,13 +47,19 @@ const ppe: Partial<PpeItem>[] = [
     engineClass: EnginePpeClass.CHEMICAL_RESISTANT,
   },
   {
+    code: 'double_layer_clothing',
+    name: 'Double-layer woven clothing (e.g. coveralls over work clothes)',
+    category: PpeCategory.CLOTHING,
+    engineClass: EnginePpeClass.DOUBLE_LAYER,
+  },
+  {
     code: 'impermeable_suit',
     name: 'Impermeable / vapour-barrier protective suit',
     category: PpeCategory.CLOTHING,
     engineClass: EnginePpeClass.IMPERMEABLE,
   },
-  // Helmets don't change heat strain meaningfully. Hoods are an add-on the engine
-  // can't take yet (ENGINE_SUPPORTS_HOOD); welding leathers aren't modelled at all.
+  // Helmets don't change heat strain meaningfully. Hoods are an add-on sent as the
+  // engine's `hood` field (ENGINE_SUPPORTS_HOOD); welding leathers aren't modelled at all.
   {
     code: 'hard_hat',
     name: 'Protective helmet',
