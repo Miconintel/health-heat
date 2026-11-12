@@ -94,6 +94,15 @@ class EnvironmentVariables {
   @IsOptional()
   ENGINE_WBGT_ENABLED: boolean = true;
 
+  /**
+   * Days with no shift after which a worker counts as not acclimatised again (engine
+   * owner's suggestion, NIOSH/OSHA "a week or more"). 0 turns the rule off.
+   */
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  ACCLIMATIZATION_ABSENCE_DAYS: number = 7;
+
   /** Wearable band feature (pairing, readings, display). Off until wanted. */
   @IsBoolean()
   @IsOptional()

@@ -180,21 +180,45 @@ function addCapturedResponse(op: Operation, key: string) {
   const ok = Object.entries(op.responses).filter(([code]) =>
     code.startsWith('2'),
   );
-  const documented = ok.some(
-    ([, r]) =>
-      !!r && 'content' in r && !!r.content?.['application/json']?.schema,
-  );
-  if (documented) return;
+  // A bare `{ type: "object" }` or a list of them (plain-object returns) says nothing, so it doesn't count.
+  const documented = ok.find(([, r]) => {
+    const schema =
+      r && 'content' in r
+        ? (r.content?.['application/json']?.schema as
+            Record<string, unknown> | undefined)
+        : undefined;
+    const items = schema?.items as Record<string, unknown> | undefined;
+    return (
+      !!schema &&
+      !!(
+        schema.$ref ||
+        schema.properties ||
+        schema.allOf ||
+        items?.$ref ||
+        items?.properties
+      )
+    );
+  });
+  const examples = captured.examples
+    ? { examples: captured.examples }
+    : { example: captured.example };
+
+  if (documented) {
+    // Keep the class-based schema; add the real examples next to it.
+    const [, r] = documented;
+    const media = (
+      r as unknown as { content: Record<string, Record<string, unknown>> }
+    ).content['application/json'];
+    Object.assign(media, examples);
+    return;
+  }
   const code = String(captured.status);
   const existing = op.responses[code] as { description?: string } | undefined;
   for (const [c] of ok) if (c !== code) delete op.responses[c];
   op.responses[code] = {
     description: `${existing?.description || 'OK'}. Schema and example come from a real response with the demo data; arrays in the example are shortened to 3 items.`,
     content: {
-      'application/json': {
-        schema: captured.schema,
-        example: captured.example,
-      },
+      'application/json': { schema: captured.schema, ...examples },
     },
   };
 }

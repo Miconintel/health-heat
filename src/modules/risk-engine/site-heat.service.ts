@@ -104,9 +104,9 @@ export class SiteHeatService {
         const r = row(floorHour(new Date(h.at)));
         r.firstForecastLevel ??= h.level;
         r.firstForecastAt ??= now;
-        const warns =
-          h.level >= RiskLevel.HIGH || (h.possibleLevel ?? 0) >= RiskLevel.HIGH;
-        if (warns) r.firstWarningAt ??= now;
+        // Agreed with the engine owner (12 Nov): only a definite High or above is a warning;
+        // a "possible" level does not count.
+        if (h.level >= RiskLevel.HIGH) r.firstWarningAt ??= now;
         r.latestForecastLevel = h.level;
         r.latestPossibleLevel = h.possibleLevel;
         r.latestConfidence = h.confidence;

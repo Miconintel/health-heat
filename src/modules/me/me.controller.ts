@@ -10,7 +10,12 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthUser, CurrentUser, Roles } from '../../common/decorators';
 import { Role } from '../../common/enums';
 import { MeService } from './me.service';
@@ -20,6 +25,7 @@ import {
   UpdatePreferencesDto,
   HeartbeatDto,
 } from './dto/me.dto';
+import { MeResponseDto } from './dto/me-response.dto';
 
 @ApiTags('me')
 @ApiBearerAuth()
@@ -29,7 +35,8 @@ export class MeController {
 
   /** The signed-in person: account, and for workers their crew, site, shift, consents and precaution summary. */
   @Get()
-  get(@CurrentUser() user: AuthUser) {
+  @ApiOkResponse({ type: MeResponseDto })
+  get(@CurrentUser() user: AuthUser): Promise<MeResponseDto> {
     return this.me.get(user);
   }
 

@@ -31,7 +31,12 @@ import { WearableReading } from '../wearables/entities/wearable-reading.entity';
 import { WearableDevice } from '../wearables/entities/wearable-device.entity';
 import { summarise, WearableSummary } from '../wearables/wearable-summary';
 import { engineHourPlan } from '../plans/plan-rules';
-import { acclimatizationStatus } from '../workers/acclimatization';
+import {
+  ABSENCE_LOOKBACK_DAYS,
+  acclimatizationStatus,
+  laterDate,
+  returnAfterAbsence,
+} from '../workers/acclimatization';
 import { EngineClient, EngineError } from '../ai-engine/engine.client';
 import type { WorkerForecast } from '../ai-engine/engine.types';
 import { EnvironmentService } from '../environment/environment.service';
@@ -139,9 +144,12 @@ export class RiskEngineService {
     config: ConfigService,
   ) {
     this.wearablesEnabled = config.get<boolean>('WEARABLES_ENABLED') === true;
+    this.absenceDays = config.get<number>('ACCLIMATIZATION_ABSENCE_DAYS') ?? 7;
   }
 
   private readonly wearablesEnabled: boolean;
+  /** Days with no shift after which acclimatisation starts again (0 = off). */
+  private readonly absenceDays: number;
 
   // ---------------------------------------------------------------------------
   // Running assessments
@@ -231,6 +239,12 @@ export class RiskEngineService {
           where: { workerId: In(workerIds) },
         }),
       ]);
+    await this.restartAcclimatisationAfterAbsence(
+      organizationId,
+      site,
+      workers,
+      now,
+    );
     const workerById = new Map(workers.map((w) => [w.id, w]));
     // Band summaries go to the engine only when it supports them (ENGINE_SUPPORTS_WEARABLES).
     const bandByWorker = this.engine.supportsWearables
@@ -366,6 +380,65 @@ export class RiskEngineService {
   }
 
   /** One worker: engine assess + forecast, or the fail-safe if the engine is unreachable. */
+  /**
+   * A worker back after ACCLIMATIZATION_ABSENCE_DAYS or more days with no shift starts
+   * acclimatising again: the start date moves to the day they came back (the later, more
+   * cautious date wins, as everywhere else). Changes are saved and audited, so the worker
+   * app and supervisor views show the same status.
+   */
+  private async restartAcclimatisationAfterAbsence(
+    organizationId: string,
+    site: Site,
+    workers: Worker[],
+    now: Date,
+  ) {
+    const candidates = workers.filter((w) => w.acclimatizationStartedOn);
+    if (this.absenceDays <= 0 || candidates.length === 0) return;
+    const history = await this.assignments.find({
+      select: { workerId: true, startsAt: true },
+      where: {
+        organizationId,
+        workerId: In(candidates.map((w) => w.id)),
+        startsAt: Between(
+          new Date(now.getTime() - ABSENCE_LOOKBACK_DAYS * 86_400_000),
+          now,
+        ),
+      },
+    });
+    const daysByWorker = new Map<string, string[]>();
+    for (const a of history) {
+      const days = daysByWorker.get(a.workerId) ?? [];
+      days.push(localDate(site.timezone, a.startsAt));
+      daysByWorker.set(a.workerId, days);
+    }
+    for (const w of candidates) {
+      const before = w.acclimatizationStartedOn;
+      const back = returnAfterAbsence(
+        daysByWorker.get(w.id) ?? [],
+        this.absenceDays,
+      );
+      if (!back || laterDate(before, back) === before) continue;
+      w.acclimatizationStartedOn = back;
+      await this.workers.update(w.id, { acclimatizationStartedOn: back });
+      await this.audit.recordSystem(
+        organizationId,
+        AuditAction.ACCLIMATIZATION_CHANGED,
+        {
+          subjectWorkerId: w.id,
+          entityType: 'worker',
+          metadata: {
+            before,
+            after: back,
+            reason: `No shift for ${this.absenceDays} or more days`,
+          },
+        },
+      );
+      this.logger.log(
+        `Acclimatisation restarted for worker ${w.id}: back on ${back} after an absence`,
+      );
+    }
+  }
+
   private async assessOne(
     organizationId: string,
     ppeNotModelled: EnginePpeAddon[],

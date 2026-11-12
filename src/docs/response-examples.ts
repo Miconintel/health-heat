@@ -3,7 +3,12 @@
 
 export const RESPONSE_EXAMPLES: Record<
   string,
-  { status: number; schema: Record<string, unknown>; example: unknown }
+  {
+    status: number;
+    schema: Record<string, unknown>;
+    example: unknown;
+    examples?: Record<string, { summary: string; value: unknown }>;
+  }
 > = {
   'delete /api/v1/me/wearable': {
     status: 200,
@@ -58,9 +63,602 @@ export const RESPONSE_EXAMPLES: Record<
     status: 200,
     schema: {
       type: 'array',
-      items: {},
+      items: {
+        type: 'object',
+        properties: {
+          profileId: {
+            type: 'string',
+            format: 'uuid',
+          },
+          workerId: {
+            type: 'string',
+            format: 'uuid',
+          },
+          workerName: {
+            type: 'string',
+          },
+          precautionLevel: {
+            type: 'string',
+          },
+          updatedAt: {
+            type: 'string',
+            format: 'date-time',
+          },
+        },
+        required: [
+          'profileId',
+          'workerId',
+          'workerName',
+          'precautionLevel',
+          'updatedAt',
+        ],
+      },
     },
-    example: [],
+    example: [
+      {
+        profileId: '6e30dec9-cea5-4338-9b3f-b373165f7ca3',
+        workerId: '44eb3f5f-89e0-4248-af5d-3f7eed19aaa8',
+        workerName: 'W-0412',
+        precautionLevel: 'high_priority',
+        updatedAt: '2026-11-12T13:04:17.701Z',
+      },
+    ],
+  },
+  'get /api/v1/me': {
+    status: 200,
+    schema: {
+      type: 'object',
+      properties: {
+        user: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              format: 'uuid',
+            },
+            loginId: {
+              type: 'string',
+            },
+            role: {
+              type: 'string',
+            },
+          },
+          required: ['id', 'loginId', 'role'],
+        },
+        worker: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              format: 'uuid',
+            },
+            employeeCode: {
+              type: 'string',
+            },
+            displayName: {
+              type: 'string',
+            },
+            crew: {
+              type: 'object',
+              properties: {
+                id: {
+                  type: 'string',
+                  format: 'uuid',
+                },
+                name: {
+                  type: 'string',
+                },
+              },
+              required: ['id', 'name'],
+            },
+            language: {
+              type: 'string',
+            },
+            readAloud: {
+              type: 'boolean',
+            },
+            acclimatization: {
+              type: 'object',
+              properties: {
+                acclimatized: {
+                  type: 'boolean',
+                },
+                startedOn: {
+                  type: 'string',
+                  format: 'date',
+                },
+                daysSinceStart: {
+                  type: 'integer',
+                },
+              },
+              required: ['acclimatized', 'startedOn', 'daysSinceStart'],
+            },
+          },
+          required: [
+            'id',
+            'employeeCode',
+            'displayName',
+            'crew',
+            'language',
+            'readAloud',
+            'acclimatization',
+          ],
+          nullable: true,
+        },
+        site: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              format: 'uuid',
+            },
+            name: {
+              type: 'string',
+            },
+            timezone: {
+              type: 'string',
+            },
+            emergencyNumber: {
+              type: 'string',
+            },
+            shifts: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  end: {
+                    type: 'string',
+                  },
+                  name: {
+                    type: 'string',
+                  },
+                  start: {
+                    type: 'string',
+                  },
+                },
+                required: ['end', 'name', 'start'],
+              },
+            },
+          },
+          required: ['id', 'name', 'timezone', 'emergencyNumber', 'shifts'],
+          nullable: true,
+        },
+        assignment: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              format: 'uuid',
+            },
+            siteId: {
+              type: 'string',
+              format: 'uuid',
+            },
+            activity: {
+              type: 'object',
+              properties: {
+                code: {
+                  type: 'string',
+                },
+                name: {
+                  type: 'string',
+                },
+              },
+              required: ['code', 'name'],
+            },
+            workload: {
+              type: 'string',
+            },
+            workEnvironment: {
+              type: 'string',
+            },
+            startsAt: {
+              type: 'string',
+              format: 'date-time',
+            },
+            endsAt: {
+              type: 'string',
+              format: 'date-time',
+            },
+            plannedBreaks: {
+              type: 'array',
+              items: {
+                type: 'string',
+                format: 'date-time',
+              },
+            },
+            breakMinutes: {
+              type: 'integer',
+            },
+            clockedInAt: {
+              nullable: true,
+            },
+            clockedOutAt: {
+              nullable: true,
+            },
+            onBreakSince: {
+              nullable: true,
+            },
+            lastBreakEndedAt: {
+              nullable: true,
+            },
+          },
+          required: [
+            'id',
+            'siteId',
+            'activity',
+            'workload',
+            'workEnvironment',
+            'startsAt',
+            'endsAt',
+            'plannedBreaks',
+            'breakMinutes',
+            'clockedInAt',
+            'clockedOutAt',
+            'onBreakSince',
+            'lastBreakEndedAt',
+          ],
+          nullable: true,
+        },
+        consents: {
+          type: 'object',
+          properties: {
+            healthPrecautions: {
+              type: 'boolean',
+            },
+            wearableBand: {
+              type: 'boolean',
+            },
+            symptomReports: {
+              type: 'boolean',
+            },
+          },
+          required: ['healthPrecautions', 'wearableBand', 'symptomReports'],
+          nullable: true,
+        },
+        precaution: {
+          type: 'object',
+          properties: {
+            level: {
+              type: 'string',
+            },
+            setOn: {
+              type: 'string',
+              format: 'date-time',
+            },
+            reviewRequested: {
+              type: 'boolean',
+            },
+            restrictions: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+            },
+            nextReviewOn: {
+              type: 'string',
+              format: 'date',
+            },
+          },
+          required: [
+            'level',
+            'setOn',
+            'reviewRequested',
+            'restrictions',
+            'nextReviewOn',
+          ],
+          nullable: true,
+        },
+      },
+      required: [
+        'user',
+        'worker',
+        'site',
+        'assignment',
+        'consents',
+        'precaution',
+      ],
+    },
+    example: {
+      user: {
+        id: 'a24c6011-c2f3-48eb-9a96-4e695d7c0a9b',
+        loginId: 'W-0412',
+        role: 'worker',
+      },
+      worker: {
+        id: '44eb3f5f-89e0-4248-af5d-3f7eed19aaa8',
+        employeeCode: 'W-0412',
+        displayName: 'W-0412',
+        crew: {
+          id: '506a4f1c-9793-46cc-9709-0c5b02eff491',
+          name: 'Crew C',
+        },
+        language: 'en',
+        readAloud: false,
+        acclimatization: {
+          acclimatized: true,
+          startedOn: '2026-09-13',
+          daysSinceStart: 60,
+        },
+      },
+      site: {
+        id: 'cce99add-f021-4b38-adff-c4f25f803c1b',
+        name: 'Abuja Demo Site',
+        timezone: 'Africa/Lagos',
+        emergencyNumber: '112',
+        shifts: [
+          {
+            end: '17:00',
+            name: 'Day shift',
+            start: '07:00',
+          },
+        ],
+      },
+      assignment: {
+        id: '19e5ed7b-b470-464f-b41c-6375bcd6c095',
+        siteId: 'cce99add-f021-4b38-adff-c4f25f803c1b',
+        activity: {
+          code: 'welding',
+          name: 'Welding',
+        },
+        workload: 'moderate',
+        workEnvironment: 'shade',
+        startsAt: '2026-11-12T06:00:00.000Z',
+        endsAt: '2026-11-12T16:00:00.000Z',
+        plannedBreaks: ['2026-11-12T10:00:00.000Z', '2026-11-12T14:00:00.000Z'],
+        breakMinutes: 15,
+        clockedInAt: null,
+        clockedOutAt: null,
+        onBreakSince: null,
+        lastBreakEndedAt: null,
+      },
+      consents: {
+        healthPrecautions: true,
+        wearableBand: false,
+        symptomReports: true,
+      },
+      precaution: {
+        level: 'high_priority',
+        setOn: '2026-11-12T13:04:00.355Z',
+        reviewRequested: false,
+        restrictions: [
+          'No heavy work at level 3 and above',
+          'Recovery break every 30 min at level 3 and above',
+        ],
+        nextReviewOn: '2026-12-10',
+      },
+    },
+    examples: {
+      worker_high_priority: {
+        summary: 'Worker W-0412: high-priority precautions',
+        value: {
+          user: {
+            id: 'a24c6011-c2f3-48eb-9a96-4e695d7c0a9b',
+            loginId: 'W-0412',
+            role: 'worker',
+          },
+          worker: {
+            id: '44eb3f5f-89e0-4248-af5d-3f7eed19aaa8',
+            employeeCode: 'W-0412',
+            displayName: 'W-0412',
+            crew: {
+              id: '506a4f1c-9793-46cc-9709-0c5b02eff491',
+              name: 'Crew C',
+            },
+            language: 'en',
+            readAloud: false,
+            acclimatization: {
+              acclimatized: true,
+              startedOn: '2026-09-13',
+              daysSinceStart: 60,
+            },
+          },
+          site: {
+            id: 'cce99add-f021-4b38-adff-c4f25f803c1b',
+            name: 'Abuja Demo Site',
+            timezone: 'Africa/Lagos',
+            emergencyNumber: '112',
+            shifts: [
+              {
+                end: '17:00',
+                name: 'Day shift',
+                start: '07:00',
+              },
+            ],
+          },
+          assignment: {
+            id: '19e5ed7b-b470-464f-b41c-6375bcd6c095',
+            siteId: 'cce99add-f021-4b38-adff-c4f25f803c1b',
+            activity: {
+              code: 'welding',
+              name: 'Welding',
+            },
+            workload: 'moderate',
+            workEnvironment: 'shade',
+            startsAt: '2026-11-12T06:00:00.000Z',
+            endsAt: '2026-11-12T16:00:00.000Z',
+            plannedBreaks: [
+              '2026-11-12T10:00:00.000Z',
+              '2026-11-12T14:00:00.000Z',
+            ],
+            breakMinutes: 15,
+            clockedInAt: null,
+            clockedOutAt: null,
+            onBreakSince: null,
+            lastBreakEndedAt: null,
+          },
+          consents: {
+            healthPrecautions: true,
+            wearableBand: false,
+            symptomReports: true,
+          },
+          precaution: {
+            level: 'high_priority',
+            setOn: '2026-11-12T13:04:00.355Z',
+            reviewRequested: false,
+            restrictions: [
+              'No heavy work at level 3 and above',
+              'Recovery break every 30 min at level 3 and above',
+            ],
+            nextReviewOn: '2026-12-10',
+          },
+        },
+      },
+      worker_enhanced: {
+        summary: 'Worker W-0384: enhanced precautions',
+        value: {
+          user: {
+            id: '8e109cec-3e27-418f-afd0-be303e65215b',
+            loginId: 'W-0384',
+            role: 'worker',
+          },
+          worker: {
+            id: '3b4fdc7f-0241-4475-8249-3f116db9e7f9',
+            employeeCode: 'W-0384',
+            displayName: 'W-0384',
+            crew: {
+              id: 'e03b476f-e004-4cb9-80b5-44d2623d550e',
+              name: 'Crew B',
+            },
+            language: 'en',
+            readAloud: false,
+            acclimatization: {
+              acclimatized: true,
+              startedOn: '2026-09-13',
+              daysSinceStart: 60,
+            },
+          },
+          site: {
+            id: 'cce99add-f021-4b38-adff-c4f25f803c1b',
+            name: 'Abuja Demo Site',
+            timezone: 'Africa/Lagos',
+            emergencyNumber: '112',
+            shifts: [
+              {
+                end: '17:00',
+                name: 'Day shift',
+                start: '07:00',
+              },
+            ],
+          },
+          assignment: {
+            id: '4996fe05-d8f8-4255-8433-713b5b448119',
+            siteId: 'cce99add-f021-4b38-adff-c4f25f803c1b',
+            activity: {
+              code: 'excavation',
+              name: 'Manual excavation / digging',
+            },
+            workload: 'very_heavy',
+            workEnvironment: 'direct_sun',
+            startsAt: '2026-11-12T06:00:00.000Z',
+            endsAt: '2026-11-12T16:00:00.000Z',
+            plannedBreaks: [
+              '2026-11-12T11:00:00.000Z',
+              '2026-11-12T15:00:00.000Z',
+            ],
+            breakMinutes: 15,
+            clockedInAt: null,
+            clockedOutAt: null,
+            onBreakSince: null,
+            lastBreakEndedAt: null,
+          },
+          consents: {
+            healthPrecautions: true,
+            wearableBand: false,
+            symptomReports: true,
+          },
+          precaution: {
+            level: 'enhanced',
+            setOn: '2026-11-12T13:04:00.364Z',
+            reviewRequested: false,
+            restrictions: ['Extra 10 min break each hour at level 3 and above'],
+            nextReviewOn: '2026-12-10',
+          },
+        },
+      },
+      worker_no_precautions: {
+        summary: 'Worker W-0301: no health profile, so precaution is null',
+        value: {
+          user: {
+            id: 'c926084a-fcce-4680-8f5d-7347569a7888',
+            loginId: 'W-0301',
+            role: 'worker',
+          },
+          worker: {
+            id: '7682d995-486f-442d-b4ef-4e64163898ae',
+            employeeCode: 'W-0301',
+            displayName: 'W-0301',
+            crew: {
+              id: '097bbd11-92d6-471b-8165-7b8f59d757bc',
+              name: 'Crew A',
+            },
+            language: 'en',
+            readAloud: false,
+            acclimatization: {
+              acclimatized: false,
+              startedOn: '2026-11-12',
+              daysSinceStart: 0,
+            },
+          },
+          site: {
+            id: 'cce99add-f021-4b38-adff-c4f25f803c1b',
+            name: 'Abuja Demo Site',
+            timezone: 'Africa/Lagos',
+            emergencyNumber: '112',
+            shifts: [
+              {
+                end: '17:00',
+                name: 'Day shift',
+                start: '07:00',
+              },
+            ],
+          },
+          assignment: {
+            id: '12df2424-c203-4dae-82b7-abd998c2b0d8',
+            siteId: 'cce99add-f021-4b38-adff-c4f25f803c1b',
+            activity: {
+              code: 'concrete_work',
+              name: 'Concrete work',
+            },
+            workload: 'heavy',
+            workEnvironment: 'direct_sun',
+            startsAt: '2026-11-12T06:00:00.000Z',
+            endsAt: '2026-11-12T16:00:00.000Z',
+            plannedBreaks: [
+              '2026-11-12T10:00:00.000Z',
+              '2026-11-12T13:00:00.000Z',
+            ],
+            breakMinutes: 15,
+            clockedInAt: null,
+            clockedOutAt: null,
+            onBreakSince: null,
+            lastBreakEndedAt: null,
+          },
+          consents: {
+            healthPrecautions: false,
+            wearableBand: false,
+            symptomReports: false,
+          },
+          precaution: null,
+        },
+      },
+      supervisor: {
+        summary:
+          'Supervisor S-001: worker, site, assignment, consents and precaution are null',
+        value: {
+          user: {
+            id: '2c46178a-ecf9-43ab-beb1-2263127b33c0',
+            loginId: 'S-001',
+            role: 'supervisor',
+          },
+          worker: null,
+          assignment: null,
+          site: null,
+          consents: null,
+          precaution: null,
+        },
+      },
+    },
   },
   'get /api/v1/me/access-log': {
     status: 200,
@@ -95,15 +693,15 @@ export const RESPONSE_EXAMPLES: Record<
         date: '2026-11-12',
         actorRole: 'supervisor',
         action: 'risk.overview_viewed',
-        count: 4,
-        lastAt: '2026-11-12T11:16:40.870Z',
+        count: 12,
+        lastAt: '2026-11-12T13:04:12.891Z',
       },
       {
         date: '2026-11-12',
         actorRole: 'occupational_health',
         action: 'risk.detail_read',
-        count: 1,
-        lastAt: '2026-11-12T11:16:40.808Z',
+        count: 5,
+        lastAt: '2026-11-12T13:04:12.787Z',
       },
     ],
   },
@@ -168,10 +766,10 @@ export const RESPONSE_EXAMPLES: Record<
     },
     example: [
       {
-        id: '7b4523cc-29cf-4886-b71b-9fc39e2b38fc',
+        id: 'd2d0aefa-6eaf-457a-a008-e836a76d060b',
         kind: 'first_aid_alert',
         status: 'open',
-        createdAt: '2026-11-12T11:16:40.838Z',
+        createdAt: '2026-11-12T13:04:12.838Z',
         detailsShared: false,
         symptoms: null,
         note: null,
@@ -179,10 +777,10 @@ export const RESPONSE_EXAMPLES: Record<
         resolvedAt: null,
       },
       {
-        id: '68ef9e50-2fb7-4d5a-93a2-a5fa7beae387',
+        id: 'f5675468-2f4a-457f-a1e3-0ba5b7bc7558',
         kind: 'symptom_report',
         status: 'open',
-        createdAt: '2026-11-12T11:16:40.832Z',
+        createdAt: '2026-11-12T13:04:12.829Z',
         detailsShared: true,
         symptoms: ['headache', 'dizzy'],
         note: 'Started after lunch',
@@ -190,14 +788,14 @@ export const RESPONSE_EXAMPLES: Record<
         resolvedAt: null,
       },
       {
-        id: 'e7e9eb8b-b2cb-4c99-8e4f-07f016c034d4',
+        id: 'e0601530-c5d0-4fa2-ba6c-6a263dc77146',
         kind: 'first_aid_alert',
         status: 'acknowledged',
-        createdAt: '2026-11-12T11:16:06.590Z',
+        createdAt: '2026-11-12T13:03:14.256Z',
         detailsShared: false,
         symptoms: null,
         note: null,
-        acknowledgedAt: '2026-11-12T11:16:12.684Z',
+        acknowledgedAt: '2026-11-12T13:03:19.194Z',
         resolvedAt: null,
       },
     ],
@@ -544,7 +1142,7 @@ export const RESPONSE_EXAMPLES: Record<
       ],
     },
     example: {
-      assessedAt: '2026-11-12T11:16:35.373Z',
+      assessedAt: '2026-11-12T13:04:07.836Z',
       level: 4,
       levelName: 'Critical',
       label: 'Critical',
@@ -561,14 +1159,14 @@ export const RESPONSE_EXAMPLES: Record<
         },
         {
           factor: 'heat',
-          effect: 'The heat is 4.3 °C over the safe line for your work.',
+          effect: 'The heat is 5.2 °C over the safe line for your work.',
         },
       ],
       action: {
         what: 'Stop the activity and move to a cool, shaded area. Follow the site heat emergency procedure.',
         when: 'immediately',
       },
-      wbgtC: 30.5,
+      wbgtC: 31.4,
       wbgtSource: 'estimated',
       dataQuality: 'ok',
       ppeNotModelled: [],
@@ -576,56 +1174,43 @@ export const RESPONSE_EXAMPLES: Record<
       forecast: {
         firstReached: [
           {
-            at: '2026-11-12T12:00:00Z',
+            at: '2026-11-12T14:00:00Z',
             label: 'Elevated',
             level: 2,
           },
           {
-            at: '2026-11-12T12:00:00Z',
+            at: '2026-11-12T14:00:00Z',
             label: 'High',
             level: 3,
           },
           {
-            at: '2026-11-12T12:00:00Z',
+            at: '2026-11-12T14:00:00Z',
             label: 'Critical',
             level: 4,
           },
         ],
         peakLevel: 4,
-        peakAt: '2026-11-12T12:00:00.000Z',
+        peakAt: '2026-11-12T14:00:00.000Z',
         possiblePeakLevel: null,
         possiblePeakAt: null,
         confidence: null,
         confidenceNote: null,
         hours: [
           {
-            at: '2026-11-12T12:00:00Z',
-            label: 'Critical',
-            level: 4,
-            action: {
-              what: 'Stop the activity and move to a cool, shaded area. Follow the site heat emergency procedure.',
-              when: 'immediately',
-            },
-            confidence: null,
-            dataQuality: 'ok',
-            possibleLabel: null,
-            possibleLevel: null,
-          },
-          {
-            at: '2026-11-12T13:00:00Z',
-            label: 'Critical',
-            level: 4,
-            action: {
-              what: 'Stop the activity and move to a cool, shaded area. Follow the site heat emergency procedure.',
-              when: 'immediately',
-            },
-            confidence: null,
-            dataQuality: 'ok',
-            possibleLabel: null,
-            possibleLevel: null,
-          },
-          {
             at: '2026-11-12T14:00:00Z',
+            label: 'Critical',
+            level: 4,
+            action: {
+              what: 'Stop the activity and move to a cool, shaded area. Follow the site heat emergency procedure.',
+              when: 'immediately',
+            },
+            confidence: null,
+            dataQuality: 'ok',
+            possibleLabel: null,
+            possibleLevel: null,
+          },
+          {
+            at: '2026-11-12T15:00:00Z',
             label: 'Critical',
             level: 4,
             action: {
@@ -643,14 +1228,14 @@ export const RESPONSE_EXAMPLES: Record<
         onBreakNow: false,
         since: null,
         startsAt: '2026-11-12T14:00:00.000Z',
-        minutesUntil: 164,
+        minutesUntil: 56,
         durationMinutes: 15,
       },
       crewLevel: 4,
       dataSources: {
         weather: {
           ok: true,
-          at: '2026-11-12T11:15:00.000Z',
+          at: '2026-11-12T13:00:00.000Z',
         },
         siteSensor: null,
         wearable: null,
@@ -660,10 +1245,10 @@ export const RESPONSE_EXAMPLES: Record<
         {
           id: '3263bca6-5de4-4a2d-8d02-64a2ad0b2c50',
           createdAt: '2026-11-12T11:16:06.340Z',
-          updatedAt: '2026-11-12T11:16:40.610Z',
+          updatedAt: '2026-11-12T13:04:12.411Z',
           organizationId: '1083395a-ffd8-4c14-8e69-fbe7416c2587',
           siteId: 'cce99add-f021-4b38-adff-c4f25f803c1b',
-          riskAssessmentId: '99659c5f-8462-48b8-9087-4735c79d1c6b',
+          riskAssessmentId: '731f2ab7-ba68-4b3f-952f-c7a22a464ed0',
           workerId: '44eb3f5f-89e0-4248-af5d-3f7eed19aaa8',
           crewId: '506a4f1c-9793-46cc-9709-0c5b02eff491',
           audience: 'worker',
@@ -676,7 +1261,7 @@ export const RESPONSE_EXAMPLES: Record<
             'Stop the activity and move to a cool, shaded area. Follow the site heat emergency procedure.',
           timing: 'immediate',
           dueAt: null,
-          status: 'open',
+          status: 'acknowledged',
         },
       ],
     },
@@ -697,8 +1282,8 @@ export const RESPONSE_EXAMPLES: Record<
       required: ['cupsToday', 'lastCupAt'],
     },
     example: {
-      cupsToday: 2,
-      lastCupAt: '2026-11-12T11:16:40.815Z',
+      cupsToday: 6,
+      lastCupAt: '2026-11-12T13:04:12.799Z',
     },
   },
   'get /api/v1/me/wearable': {
@@ -744,7 +1329,7 @@ export const RESPONSE_EXAMPLES: Record<
       paired: true,
       deviceId: 'band-docs-0388',
       model: 'HeatGuard band simulator',
-      lastSeenAt: '2026-11-12T11:16:40.826Z',
+      lastSeenAt: '2026-11-12T13:04:12.852Z',
       batteryPercent: 81,
       connected: true,
     },
@@ -814,7 +1399,7 @@ export const RESPONSE_EXAMPLES: Record<
     },
     example: {
       summary: {
-        measuredAt: '2026-11-12T11:16:40.826Z',
+        measuredAt: '2026-11-12T13:04:12.852Z',
         heartRateBpm: 130,
         heartRateAvg10MinBpm: 124,
         minutesHeartRateAtOrAbove120: 4,
@@ -824,22 +1409,85 @@ export const RESPONSE_EXAMPLES: Record<
       },
       readings: [
         {
-          at: '2026-11-12T11:12:40.826Z',
+          at: '2026-11-12T13:00:12.852Z',
           heartRateBpm: 118,
           skinTempC: 35.1,
         },
         {
-          at: '2026-11-12T11:13:40.826Z',
+          at: '2026-11-12T13:01:12.852Z',
           heartRateBpm: 121,
           skinTempC: 35.2,
         },
         {
-          at: '2026-11-12T11:14:40.826Z',
+          at: '2026-11-12T13:02:12.852Z',
           heartRateBpm: 124,
           skinTempC: 35.300000000000004,
         },
       ],
     },
+  },
+  'get /api/v1/risk-rules': {
+    status: 200,
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+          },
+          value: {
+            oneOf: [
+              {
+                type: 'boolean',
+              },
+              {
+                type: 'integer',
+              },
+            ],
+          },
+          source: {
+            type: 'string',
+          },
+          todo_verify: {
+            type: 'boolean',
+          },
+          note: {
+            type: 'string',
+          },
+        },
+        required: ['name', 'value', 'source', 'todo_verify', 'note'],
+      },
+    },
+    example: [
+      {
+        name: 'metabolic_rate_w',
+        value: {
+          light: 180,
+          moderate: 300,
+          heavy: 415,
+          very_heavy: 520,
+        },
+        source:
+          'ACGIH TLV for Heat Stress and Strain, metabolic rate categories',
+        todo_verify: true,
+        note: 'Not yet checked against the current ACGIH booklet.',
+      },
+      {
+        name: 'rel_intercept_c',
+        value: 56.7,
+        source: 'NIOSH 2016, Pub. 2016-106, REL formula',
+        todo_verify: false,
+        note: '',
+      },
+      {
+        name: 'rel_slope_c',
+        value: 11.5,
+        source: 'NIOSH 2016, Pub. 2016-106, REL formula',
+        todo_verify: false,
+        note: '',
+      },
+    ],
   },
   'get /api/v1/sites/{siteId}/crews-summary': {
     status: 200,
@@ -949,12 +1597,12 @@ export const RESPONSE_EXAMPLES: Record<
         now: 4,
         peak: {
           level: 4,
-          at: '2026-11-12T12:00:00.000Z',
+          at: '2026-11-12T14:00:00.000Z',
           possibleLevel: null,
         },
         nextAction: {
           code: 'supervisor.suspend_activity',
-          recommendationId: '1bbbee73-6b9a-44be-941b-b00b87af1e16',
+          recommendationId: 'd81e9f6f-3096-4696-be1a-2dc739d5a470',
           dueAt: null,
         },
       },
@@ -972,13 +1620,13 @@ export const RESPONSE_EXAMPLES: Record<
         now: 4,
         peak: {
           level: 4,
-          at: '2026-11-12T12:00:00.000Z',
+          at: '2026-11-12T14:00:00.000Z',
           possibleLevel: null,
         },
         nextAction: {
-          code: 'crew.rotate_and_cool',
-          recommendationId: 'ef5279fc-ab83-4a57-8608-d36c4e1cee19',
-          dueAt: '2026-11-12T12:00:00.000Z',
+          code: 'supervisor.worker_earlier_breaks',
+          recommendationId: 'd80c6a63-f858-4dd1-ba7b-2d9e44537dfa',
+          dueAt: null,
         },
       },
       {
@@ -995,13 +1643,13 @@ export const RESPONSE_EXAMPLES: Record<
         now: 4,
         peak: {
           level: 4,
-          at: '2026-11-12T12:00:00.000Z',
+          at: '2026-11-12T14:00:00.000Z',
           possibleLevel: null,
         },
         nextAction: {
-          code: 'crew.rotate_and_cool',
-          recommendationId: '7fdd1fe3-5ad7-4784-97c1-a406a38be02d',
-          dueAt: '2026-11-12T12:00:00.000Z',
+          code: 'supervisor.suspend_activity',
+          recommendationId: 'e0de060b-4d46-436a-a0ed-36fc0a23d373',
+          dueAt: null,
         },
       },
     ],
@@ -1311,25 +1959,25 @@ export const RESPONSE_EXAMPLES: Record<
         ],
       },
       current: {
-        id: 'c1393263-12e8-4836-bfcc-505ba1a84405',
-        createdAt: '2026-11-12T11:16:35.346Z',
-        updatedAt: '2026-11-12T11:16:35.346Z',
+        id: 'cf60764f-e9f3-446f-bfd4-bd133fc14623',
+        createdAt: '2026-11-12T13:01:19.252Z',
+        updatedAt: '2026-11-12T13:01:19.252Z',
         siteId: 'cce99add-f021-4b38-adff-c4f25f803c1b',
-        observedAt: '2026-11-12T11:15:00.000Z',
+        observedAt: '2026-11-12T13:00:00.000Z',
         isForecast: false,
         source: 'weather_api',
-        airTempC: 32.6,
-        relativeHumidity: 32,
-        solarRadiationWm2: 756,
-        windSpeedMs: 0.86,
-        directRadiationWm2: 472,
-        diffuseRadiationWm2: 284,
-        surfacePressureHpa: 962.3,
-        weatherCode: 2,
-        dustUgM3: 49,
-        pm10UgM3: 36.9,
+        airTempC: 33.3,
+        relativeHumidity: 29,
+        solarRadiationWm2: 724,
+        windSpeedMs: 0.56,
+        directRadiationWm2: 542,
+        diffuseRadiationWm2: 182,
+        surfacePressureHpa: 960.9,
+        weatherCode: 0,
+        dustUgM3: 79,
+        pm10UgM3: 57.5,
         precipitationMm: 0,
-        wbgtSunC: 30.5,
+        wbgtSunC: 31.4,
         wbgtShadeC: null,
         wbgtMethod: 'estimated',
         wbgtModel: 'engine/liljegren_2008',
@@ -1337,75 +1985,75 @@ export const RESPONSE_EXAMPLES: Record<
       },
       forecast: [
         {
-          id: '35a57112-07c6-47f0-b161-cf0a850e28bc',
-          createdAt: '2026-11-12T11:16:35.346Z',
-          updatedAt: '2026-11-12T11:16:35.346Z',
-          siteId: 'cce99add-f021-4b38-adff-c4f25f803c1b',
-          observedAt: '2026-11-12T12:00:00.000Z',
-          isForecast: true,
-          source: 'weather_api',
-          airTempC: 33,
-          relativeHumidity: 30,
-          solarRadiationWm2: 733,
-          windSpeedMs: 0.61,
-          directRadiationWm2: 437,
-          diffuseRadiationWm2: 296,
-          surfacePressureHpa: 961.5,
-          weatherCode: 3,
-          dustUgM3: 65,
-          pm10UgM3: 49.9,
-          precipitationMm: 0,
-          wbgtSunC: 31.3,
-          wbgtShadeC: null,
-          wbgtMethod: 'estimated',
-          wbgtModel: 'engine/liljegren_2008',
-          confidence: 'medium',
-        },
-        {
-          id: 'b9c0c8b8-c3d7-46c0-94fb-08c1571759ca',
-          createdAt: '2026-11-12T11:16:35.346Z',
-          updatedAt: '2026-11-12T11:16:35.346Z',
-          siteId: 'cce99add-f021-4b38-adff-c4f25f803c1b',
-          observedAt: '2026-11-12T13:00:00.000Z',
-          isForecast: true,
-          source: 'weather_api',
-          airTempC: 33.1,
-          relativeHumidity: 28,
-          solarRadiationWm2: 622,
-          windSpeedMs: 0.56,
-          directRadiationWm2: 371,
-          diffuseRadiationWm2: 251,
-          surfacePressureHpa: 960.7,
-          weatherCode: 3,
-          dustUgM3: 79,
-          pm10UgM3: 57.5,
-          precipitationMm: 0,
-          wbgtSunC: 30.8,
-          wbgtShadeC: null,
-          wbgtMethod: 'estimated',
-          wbgtModel: 'engine/liljegren_2008',
-          confidence: 'medium',
-        },
-        {
-          id: 'c85b2a7b-1b2d-4aec-8298-3539cb48fc4e',
-          createdAt: '2026-11-12T11:16:35.346Z',
-          updatedAt: '2026-11-12T11:16:35.346Z',
+          id: '91359ddf-c009-406f-a9ff-7ded6726e765',
+          createdAt: '2026-11-12T13:04:05.330Z',
+          updatedAt: '2026-11-12T13:04:05.330Z',
           siteId: 'cce99add-f021-4b38-adff-c4f25f803c1b',
           observedAt: '2026-11-12T14:00:00.000Z',
           isForecast: true,
           source: 'weather_api',
-          airTempC: 33.1,
-          relativeHumidity: 28,
-          solarRadiationWm2: 563,
-          windSpeedMs: 0.69,
-          directRadiationWm2: 344,
-          diffuseRadiationWm2: 219,
-          surfacePressureHpa: 959.6,
-          weatherCode: 0,
+          airTempC: 33.5,
+          relativeHumidity: 27,
+          solarRadiationWm2: 658,
+          windSpeedMs: 0.36,
+          directRadiationWm2: 499,
+          diffuseRadiationWm2: 159,
+          surfacePressureHpa: 959.9,
+          weatherCode: 1,
           dustUgM3: 91,
           pm10UgM3: 64,
           precipitationMm: 0,
-          wbgtSunC: 29.6,
+          wbgtSunC: 32.2,
+          wbgtShadeC: null,
+          wbgtMethod: 'estimated',
+          wbgtModel: 'engine/liljegren_2008',
+          confidence: 'medium',
+        },
+        {
+          id: '6f293a11-f9b4-4091-a9a8-cffb2f043ed3',
+          createdAt: '2026-11-12T13:04:05.330Z',
+          updatedAt: '2026-11-12T13:04:05.330Z',
+          siteId: 'cce99add-f021-4b38-adff-c4f25f803c1b',
+          observedAt: '2026-11-12T15:00:00.000Z',
+          isForecast: true,
+          source: 'weather_api',
+          airTempC: 32.9,
+          relativeHumidity: 27,
+          solarRadiationWm2: 476,
+          windSpeedMs: 1.5,
+          directRadiationWm2: 342,
+          diffuseRadiationWm2: 134,
+          surfacePressureHpa: 959.6,
+          weatherCode: 0,
+          dustUgM3: 98,
+          pm10UgM3: 70.5,
+          precipitationMm: 0,
+          wbgtSunC: 27,
+          wbgtShadeC: null,
+          wbgtMethod: 'estimated',
+          wbgtModel: 'engine/liljegren_2008',
+          confidence: 'medium',
+        },
+        {
+          id: '4419a06b-7273-4dab-a0d8-37de11ec154c',
+          createdAt: '2026-11-12T13:04:05.330Z',
+          updatedAt: '2026-11-12T13:04:05.330Z',
+          siteId: 'cce99add-f021-4b38-adff-c4f25f803c1b',
+          observedAt: '2026-11-12T16:00:00.000Z',
+          isForecast: true,
+          source: 'weather_api',
+          airTempC: 30.5,
+          relativeHumidity: 43,
+          solarRadiationWm2: 264,
+          windSpeedMs: 3.33,
+          directRadiationWm2: 159,
+          diffuseRadiationWm2: 105,
+          surfacePressureHpa: 959.6,
+          weatherCode: 0,
+          dustUgM3: 97,
+          pm10UgM3: 69.6,
+          precipitationMm: 0,
+          wbgtSunC: 25.3,
           wbgtShadeC: null,
           wbgtMethod: 'estimated',
           wbgtModel: 'engine/liljegren_2008',
@@ -1470,36 +2118,36 @@ export const RESPONSE_EXAMPLES: Record<
     },
     example: [
       {
-        id: '7b4523cc-29cf-4886-b71b-9fc39e2b38fc',
+        id: 'd2d0aefa-6eaf-457a-a008-e836a76d060b',
         workerId: 'ebafe8e7-e96c-4787-9928-864a8c9ea587',
         workerCode: 'W-0388',
         crewId: 'e03b476f-e004-4cb9-80b5-44d2623d550e',
         kind: 'first_aid_alert',
         status: 'open',
-        createdAt: '2026-11-12T11:16:40.838Z',
+        createdAt: '2026-11-12T13:04:12.838Z',
         acknowledgedAt: null,
         resolvedAt: null,
       },
       {
-        id: '68ef9e50-2fb7-4d5a-93a2-a5fa7beae387',
+        id: 'f5675468-2f4a-457f-a1e3-0ba5b7bc7558',
         workerId: 'ebafe8e7-e96c-4787-9928-864a8c9ea587',
         workerCode: 'W-0388',
         crewId: 'e03b476f-e004-4cb9-80b5-44d2623d550e',
         kind: 'symptom_report',
         status: 'open',
-        createdAt: '2026-11-12T11:16:40.832Z',
+        createdAt: '2026-11-12T13:04:12.829Z',
         acknowledgedAt: null,
         resolvedAt: null,
       },
       {
-        id: 'e7e9eb8b-b2cb-4c99-8e4f-07f016c034d4',
+        id: 'e0601530-c5d0-4fa2-ba6c-6a263dc77146',
         workerId: 'ebafe8e7-e96c-4787-9928-864a8c9ea587',
         workerCode: 'W-0388',
         crewId: 'e03b476f-e004-4cb9-80b5-44d2623d550e',
         kind: 'first_aid_alert',
         status: 'acknowledged',
-        createdAt: '2026-11-12T11:16:06.590Z',
-        acknowledgedAt: '2026-11-12T11:16:12.684Z',
+        createdAt: '2026-11-12T13:03:14.256Z',
+        acknowledgedAt: '2026-11-12T13:03:19.194Z',
         resolvedAt: null,
       },
     ],
@@ -1606,7 +2254,7 @@ export const RESPONSE_EXAMPLES: Record<
               type: 'integer',
             },
             percent: {
-              nullable: true,
+              type: 'integer',
             },
             provisional: {
               type: 'boolean',
@@ -1756,21 +2404,21 @@ export const RESPONSE_EXAMPLES: Record<
     },
     example: {
       period: '30d',
-      from: '2026-10-13T11:16:46.670Z',
-      to: '2026-11-12T11:16:46.670Z',
+      from: '2026-10-13T13:04:17.629Z',
+      to: '2026-11-12T13:04:17.629Z',
       warningLeadTime: {
         medianMinutes: null,
         provisional: true,
       },
       falseAlarms: {
         count: 0,
-        of: 0,
-        percent: null,
+        of: 1,
+        percent: 0,
         provisional: true,
       },
       missedWarnings: {
-        count: 0,
-        ofHighPeriods: 0,
+        count: 1,
+        ofHighPeriods: 1,
         provisional: true,
       },
       leadTimeHistogram: [
@@ -1789,18 +2437,11 @@ export const RESPONSE_EXAMPLES: Record<
       ],
       actionsFollowed: {
         done: 0,
-        total: 42,
+        total: 35,
         percent: 0,
         byCrew: [
           {
-            crewId: '097bbd11-92d6-471b-8165-7b8f59d757bc',
-            grouped: false,
-            done: 0,
-            total: 9,
-            percent: 0,
-          },
-          {
-            crewId: 'e03b476f-e004-4cb9-80b5-44d2623d550e',
+            crewId: '15022cc6-9081-4cc3-99ca-bf79b482eb95',
             grouped: false,
             done: 0,
             total: 9,
@@ -1813,19 +2454,26 @@ export const RESPONSE_EXAMPLES: Record<
             total: 8,
             percent: 0,
           },
+          {
+            crewId: 'e03b476f-e004-4cb9-80b5-44d2623d550e',
+            grouped: false,
+            done: 0,
+            total: 9,
+            percent: 0,
+          },
         ],
       },
       symptomsAndIncidents: {
-        symptomReports: 2,
+        symptomReports: 6,
         heatIncidents: null,
       },
       emergencyEscalations: {
-        count: 2,
-        acknowledgedWithin10Min: 1,
+        count: 6,
+        acknowledgedWithin10Min: 5,
       },
       lostWorkTime: {
         pausedMinutes: 0,
-        scheduledMinutes: 9187,
+        scheduledMinutes: 12305,
       },
       compliance: {
         shiftsMeetingPlan: 0,
@@ -2012,7 +2660,7 @@ export const RESPONSE_EXAMPLES: Record<
       date: '2026-11-12',
       status: 'sent',
       source: 'saved',
-      sentAt: '2026-11-12T11:16:06.733Z',
+      sentAt: '2026-11-12T13:03:14.390Z',
       hours: [
         {
           label: '07:00',
@@ -2327,35 +2975,35 @@ export const RESPONSE_EXAMPLES: Record<
       ],
     },
     example: {
-      assessedAt: '2026-11-12T11:16:35.373Z',
+      assessedAt: '2026-11-12T13:04:07.836Z',
       environment: {
         current: {
-          observedAt: '2026-11-12T11:15:00.000Z',
+          observedAt: '2026-11-12T13:00:00.000Z',
           source: 'weather_api',
-          airTempC: 32.6,
-          relativeHumidity: 32,
-          solarRadiationWm2: 756,
-          windSpeedMs: 0.86,
-          wbgtSunC: 30.5,
+          airTempC: 33.3,
+          relativeHumidity: 29,
+          solarRadiationWm2: 724,
+          windSpeedMs: 0.56,
+          wbgtSunC: 31.4,
           wbgtShadeC: null,
           wbgtMethod: 'estimated',
         },
         forecast: [
           {
-            at: '2026-11-12T12:00:00.000Z',
-            wbgtSunC: 31.3,
-            wbgtShadeC: null,
-            wbgtMethod: 'estimated',
-          },
-          {
-            at: '2026-11-12T13:00:00.000Z',
-            wbgtSunC: 30.8,
-            wbgtShadeC: null,
-            wbgtMethod: 'estimated',
-          },
-          {
             at: '2026-11-12T14:00:00.000Z',
-            wbgtSunC: 29.6,
+            wbgtSunC: 32.2,
+            wbgtShadeC: null,
+            wbgtMethod: 'estimated',
+          },
+          {
+            at: '2026-11-12T15:00:00.000Z',
+            wbgtSunC: 27,
+            wbgtShadeC: null,
+            wbgtMethod: 'estimated',
+          },
+          {
+            at: '2026-11-12T16:00:00.000Z',
+            wbgtSunC: 25.3,
             wbgtShadeC: null,
             wbgtMethod: 'estimated',
           },
@@ -2364,16 +3012,16 @@ export const RESPONSE_EXAMPLES: Record<
       distribution: {
         low: 0,
         elevated: 0,
-        high: 7,
-        critical: 22,
+        high: 0,
+        critical: 29,
       },
       degraded: 0,
       workers: [
         {
-          workerId: '7682d995-486f-442d-b4ef-4e64163898ae',
-          workerName: 'W-0301',
-          crewId: '097bbd11-92d6-471b-8165-7b8f59d757bc',
-          assessedAt: '2026-11-12T11:16:35.373Z',
+          workerId: 'fadcde5f-bf7d-4d6e-ba5c-e5240c770848',
+          workerName: 'W-0507',
+          crewId: '15022cc6-9081-4cc3-99ca-bf79b482eb95',
+          assessedAt: '2026-11-12T13:04:07.836Z',
           level: 4,
           levelName: 'Critical',
           label: 'Critical',
@@ -2389,29 +3037,29 @@ export const RESPONSE_EXAMPLES: Record<
             firstReached: [
               {
                 level: 2,
-                at: '2026-11-12T12:00:00Z',
+                at: '2026-11-12T14:00:00Z',
               },
               {
                 level: 3,
-                at: '2026-11-12T12:00:00Z',
+                at: '2026-11-12T14:00:00Z',
               },
               {
                 level: 4,
-                at: '2026-11-12T12:00:00Z',
+                at: '2026-11-12T14:00:00Z',
               },
             ],
             peakLevel: 4,
-            peakAt: '2026-11-12T12:00:00.000Z',
+            peakAt: '2026-11-12T14:00:00.000Z',
             possiblePeakLevel: null,
             possiblePeakAt: null,
             confidence: null,
           },
         },
         {
-          workerId: '2c989bf0-26d2-4e6e-b617-5388640a753b',
-          workerName: 'W-0308',
-          crewId: '097bbd11-92d6-471b-8165-7b8f59d757bc',
-          assessedAt: '2026-11-12T11:16:35.373Z',
+          workerId: '16b45eb2-fa73-4a23-b991-b46fef1ae71d',
+          workerName: 'W-0504',
+          crewId: '15022cc6-9081-4cc3-99ca-bf79b482eb95',
+          assessedAt: '2026-11-12T13:04:07.836Z',
           level: 4,
           levelName: 'Critical',
           label: 'Critical',
@@ -2427,29 +3075,29 @@ export const RESPONSE_EXAMPLES: Record<
             firstReached: [
               {
                 level: 2,
-                at: '2026-11-12T12:00:00Z',
+                at: '2026-11-12T14:00:00Z',
               },
               {
                 level: 3,
-                at: '2026-11-12T12:00:00Z',
+                at: '2026-11-12T14:00:00Z',
               },
               {
                 level: 4,
-                at: '2026-11-12T12:00:00Z',
+                at: '2026-11-12T14:00:00Z',
               },
             ],
             peakLevel: 4,
-            peakAt: '2026-11-12T12:00:00.000Z',
+            peakAt: '2026-11-12T14:00:00.000Z',
             possiblePeakLevel: null,
             possiblePeakAt: null,
             confidence: null,
           },
         },
         {
-          workerId: 'db369d50-329a-47ee-98cf-4224caee21e9',
-          workerName: 'W-0306',
-          crewId: '097bbd11-92d6-471b-8165-7b8f59d757bc',
-          assessedAt: '2026-11-12T11:16:35.373Z',
+          workerId: 'a49dc846-88bb-4ce2-8d27-dc11599cf15c',
+          workerName: 'W-0508',
+          crewId: '15022cc6-9081-4cc3-99ca-bf79b482eb95',
+          assessedAt: '2026-11-12T13:04:07.836Z',
           level: 4,
           levelName: 'Critical',
           label: 'Critical',
@@ -2465,19 +3113,19 @@ export const RESPONSE_EXAMPLES: Record<
             firstReached: [
               {
                 level: 2,
-                at: '2026-11-12T12:00:00Z',
+                at: '2026-11-12T14:00:00Z',
               },
               {
                 level: 3,
-                at: '2026-11-12T12:00:00Z',
+                at: '2026-11-12T14:00:00Z',
               },
               {
                 level: 4,
-                at: '2026-11-12T12:00:00Z',
+                at: '2026-11-12T14:00:00Z',
               },
             ],
             peakLevel: 4,
-            peakAt: '2026-11-12T12:00:00.000Z',
+            peakAt: '2026-11-12T14:00:00.000Z',
             possiblePeakLevel: null,
             possiblePeakAt: null,
             confidence: null,
@@ -3239,7 +3887,7 @@ export const RESPONSE_EXAMPLES: Record<
         },
       ],
       workersOnShift: 29,
-      updatedAt: '2026-11-12T11:16:35.373Z',
+      updatedAt: '2026-11-12T13:04:07.836Z',
       siteHeat: {
         reference: {
           workload: 'moderate',
@@ -3247,13 +3895,13 @@ export const RESPONSE_EXAMPLES: Record<
         },
         now: {
           level: 4,
-          wbgtC: 30.5,
+          wbgtC: 31.4,
           wbgtMethod: 'estimated',
         },
         peak: {
           level: 4,
           possible: false,
-          from: '2026-11-12T11:00:00.000Z',
+          from: '2026-11-12T13:00:00.000Z',
           to: '2026-11-12T15:00:00.000Z',
           confidence: null,
         },
@@ -3263,14 +3911,14 @@ export const RESPONSE_EXAMPLES: Record<
             level: 4,
             possibleLevel: null,
             observed: true,
-            now: true,
+            now: false,
             confidence: null,
           },
           {
             hourStart: '2026-11-12T12:00:00.000Z',
             level: 4,
             possibleLevel: null,
-            observed: false,
+            observed: true,
             now: false,
             confidence: null,
           },
@@ -3278,8 +3926,8 @@ export const RESPONSE_EXAMPLES: Record<
             hourStart: '2026-11-12T13:00:00.000Z',
             level: 4,
             possibleLevel: null,
-            observed: false,
-            now: false,
+            observed: true,
+            now: true,
             confidence: null,
           },
         ],
@@ -3287,14 +3935,14 @@ export const RESPONSE_EXAMPLES: Record<
       distribution: {
         low: 0,
         elevated: 0,
-        high: 7,
-        critical: 22,
+        high: 0,
+        critical: 29,
         noRecentData: 0,
       },
       hazards: [],
       systemHealth: {
         weatherFeed: {
-          lastAt: '2026-11-12T11:15:00.000Z',
+          lastAt: '2026-11-12T13:00:00.000Z',
           ok: true,
         },
         siteSensors: null,
@@ -3310,119 +3958,107 @@ export const RESPONSE_EXAMPLES: Record<
           connected: 1,
         },
         riskEngine: {
-          lastRunAt: '2026-11-12T11:16:35.373Z',
+          lastRunAt: '2026-11-12T13:04:07.836Z',
           ok: true,
           fallbackAssessments: 0,
         },
       },
       needsAttention: {
-        open: 31,
+        open: 42,
         items: [
           {
             kind: 'help',
-            helpRequestId: '7b4523cc-29cf-4886-b71b-9fc39e2b38fc',
+            helpRequestId: 'd2d0aefa-6eaf-457a-a008-e836a76d060b',
             helpKind: 'first_aid_alert',
             workerId: 'ebafe8e7-e96c-4787-9928-864a8c9ea587',
             workerCode: 'W-0388',
             crewId: 'e03b476f-e004-4cb9-80b5-44d2623d550e',
             status: 'open',
-            createdAt: '2026-11-12T11:16:40.838Z',
+            createdAt: '2026-11-12T13:04:12.838Z',
             acknowledgedAt: null,
           },
           {
             kind: 'help',
-            helpRequestId: '68ef9e50-2fb7-4d5a-93a2-a5fa7beae387',
+            helpRequestId: 'f5675468-2f4a-457f-a1e3-0ba5b7bc7558',
             helpKind: 'symptom_report',
             workerId: 'ebafe8e7-e96c-4787-9928-864a8c9ea587',
             workerCode: 'W-0388',
             crewId: 'e03b476f-e004-4cb9-80b5-44d2623d550e',
             status: 'open',
-            createdAt: '2026-11-12T11:16:40.832Z',
+            createdAt: '2026-11-12T13:04:12.829Z',
             acknowledgedAt: null,
           },
           {
             kind: 'help',
-            helpRequestId: 'e7e9eb8b-b2cb-4c99-8e4f-07f016c034d4',
+            helpRequestId: 'e0601530-c5d0-4fa2-ba6c-6a263dc77146',
             helpKind: 'first_aid_alert',
             workerId: 'ebafe8e7-e96c-4787-9928-864a8c9ea587',
             workerCode: 'W-0388',
             crewId: 'e03b476f-e004-4cb9-80b5-44d2623d550e',
             status: 'acknowledged',
-            createdAt: '2026-11-12T11:16:06.590Z',
-            acknowledgedAt: '2026-11-12T11:16:12.684Z',
+            createdAt: '2026-11-12T13:03:14.256Z',
+            acknowledgedAt: '2026-11-12T13:03:19.194Z',
           },
         ],
       },
       actionsToday: {
         done: 0,
-        total: 6,
+        total: 4,
         actions: [
           {
-            code: 'crew.rotate_and_cool',
+            code: 'supervisor.worker_earlier_breaks',
             status: 'pending',
-            crewIds: [
-              '097bbd11-92d6-471b-8165-7b8f59d757bc',
-              'e03b476f-e004-4cb9-80b5-44d2623d550e',
-              '506a4f1c-9793-46cc-9709-0c5b02eff491',
-            ],
-            workerCount: 0,
+            crewIds: ['e03b476f-e004-4cb9-80b5-44d2623d550e'],
+            workerCount: 1,
             timing: 'immediate',
             firstAt: '2026-11-12T11:16:06.340Z',
-            dueAt: '2026-11-12T12:00:00.000Z',
-            recommendationIds: [
-              '3c0ef6c0-7758-445d-8552-688ad35de71b',
-              'ef5279fc-ab83-4a57-8608-d36c4e1cee19',
-              '7fdd1fe3-5ad7-4784-97c1-a406a38be02d',
-            ],
+            dueAt: null,
+            recommendationIds: ['d80c6a63-f858-4dd1-ba7b-2d9e44537dfa'],
           },
           {
             code: 'supervisor.suspend_activity',
             status: 'pending',
             crewIds: [
-              '15022cc6-9081-4cc3-99ca-bf79b482eb95',
               '506a4f1c-9793-46cc-9709-0c5b02eff491',
+              '097bbd11-92d6-471b-8165-7b8f59d757bc',
               'e03b476f-e004-4cb9-80b5-44d2623d550e',
             ],
-            workerCount: 22,
+            workerCount: 29,
             timing: 'immediate',
             firstAt: '2026-11-12T11:16:06.340Z',
             dueAt: null,
             recommendationIds: [
-              '7677a6dd-b41f-4141-bced-6820b4cf81f0',
+              'e0de060b-4d46-436a-a0ed-36fc0a23d373',
+              'edfd6758-b074-423d-a718-b910b20d3820',
               '3afa6450-7094-4894-8f61-7f2208108f38',
-              'df8c2563-9efe-46d8-9383-6bd2c083fcac',
             ],
           },
           {
-            code: 'supervisor.extra_breaks_reduce_load',
+            code: 'supervisor.worker_reduced_exposure',
             status: 'pending',
-            crewIds: ['15022cc6-9081-4cc3-99ca-bf79b482eb95'],
-            workerCount: 7,
+            crewIds: ['506a4f1c-9793-46cc-9709-0c5b02eff491'],
+            workerCount: 1,
             timing: 'immediate',
             firstAt: '2026-11-12T11:16:06.340Z',
             dueAt: null,
-            recommendationIds: [
-              '3dc49b14-7be1-4d2b-b433-6a7cda95f83b',
-              '55c1110e-8537-42f7-8764-edf5bc6dda86',
-              '7f4190a1-fdb3-4b50-a25d-ba0784a94922',
-            ],
+            recommendationIds: ['fc63e80a-b7f6-4e65-9c5f-eee7cc469cc1'],
           },
         ],
       },
       todaySoFar: {
         warningLeadMinutes: null,
         warnings: {
-          periods: 0,
+          periods: 1,
           notBorneOut: 0,
           provisional: true,
         },
         actionsFollowed: {
           done: 0,
-          total: 42,
+          total: 35,
           percent: 0,
         },
-        symptomReports: 2,
-        emergencyEscalations: 2,
+        symptomReports: 6,
+        emergencyEscalations: 6,
         workTimePausedMinutes: 0,
       },
       crews: [
@@ -3440,12 +4076,12 @@ export const RESPONSE_EXAMPLES: Record<
           now: 4,
           peak: {
             level: 4,
-            at: '2026-11-12T12:00:00.000Z',
+            at: '2026-11-12T14:00:00.000Z',
             possibleLevel: null,
           },
           nextAction: {
             code: 'supervisor.suspend_activity',
-            recommendationId: '1bbbee73-6b9a-44be-941b-b00b87af1e16',
+            recommendationId: 'd81e9f6f-3096-4696-be1a-2dc739d5a470',
             dueAt: null,
           },
         },
@@ -3463,13 +4099,13 @@ export const RESPONSE_EXAMPLES: Record<
           now: 4,
           peak: {
             level: 4,
-            at: '2026-11-12T12:00:00.000Z',
+            at: '2026-11-12T14:00:00.000Z',
             possibleLevel: null,
           },
           nextAction: {
-            code: 'crew.rotate_and_cool',
-            recommendationId: 'ef5279fc-ab83-4a57-8608-d36c4e1cee19',
-            dueAt: '2026-11-12T12:00:00.000Z',
+            code: 'supervisor.worker_earlier_breaks',
+            recommendationId: 'd80c6a63-f858-4dd1-ba7b-2d9e44537dfa',
+            dueAt: null,
           },
         },
         {
@@ -3486,13 +4122,13 @@ export const RESPONSE_EXAMPLES: Record<
           now: 4,
           peak: {
             level: 4,
-            at: '2026-11-12T12:00:00.000Z',
+            at: '2026-11-12T14:00:00.000Z',
             possibleLevel: null,
           },
           nextAction: {
-            code: 'crew.rotate_and_cool',
-            recommendationId: '7fdd1fe3-5ad7-4784-97c1-a406a38be02d',
-            dueAt: '2026-11-12T12:00:00.000Z',
+            code: 'supervisor.suspend_activity',
+            recommendationId: 'e0de060b-4d46-436a-a0ed-36fc0a23d373',
+            dueAt: null,
           },
         },
       ],
@@ -3527,10 +4163,10 @@ export const RESPONSE_EXAMPLES: Record<
       ],
       workers: [
         {
-          workerId: '7682d995-486f-442d-b4ef-4e64163898ae',
-          workerName: 'W-0301',
-          crewId: '097bbd11-92d6-471b-8165-7b8f59d757bc',
-          assessedAt: '2026-11-12T11:16:35.373Z',
+          workerId: 'fadcde5f-bf7d-4d6e-ba5c-e5240c770848',
+          workerName: 'W-0507',
+          crewId: '15022cc6-9081-4cc3-99ca-bf79b482eb95',
+          assessedAt: '2026-11-12T13:04:07.836Z',
           level: 4,
           levelName: 'Critical',
           label: 'Critical',
@@ -3546,19 +4182,19 @@ export const RESPONSE_EXAMPLES: Record<
             firstReached: [
               {
                 level: 2,
-                at: '2026-11-12T12:00:00Z',
+                at: '2026-11-12T14:00:00Z',
               },
               {
                 level: 3,
-                at: '2026-11-12T12:00:00Z',
+                at: '2026-11-12T14:00:00Z',
               },
               {
                 level: 4,
-                at: '2026-11-12T12:00:00Z',
+                at: '2026-11-12T14:00:00Z',
               },
             ],
             peakLevel: 4,
-            peakAt: '2026-11-12T12:00:00.000Z',
+            peakAt: '2026-11-12T14:00:00.000Z',
             possiblePeakLevel: null,
             possiblePeakAt: null,
             confidence: null,
@@ -3567,10 +4203,10 @@ export const RESPONSE_EXAMPLES: Record<
           treatedAsLevel: 4,
         },
         {
-          workerId: '2c989bf0-26d2-4e6e-b617-5388640a753b',
-          workerName: 'W-0308',
-          crewId: '097bbd11-92d6-471b-8165-7b8f59d757bc',
-          assessedAt: '2026-11-12T11:16:35.373Z',
+          workerId: '16b45eb2-fa73-4a23-b991-b46fef1ae71d',
+          workerName: 'W-0504',
+          crewId: '15022cc6-9081-4cc3-99ca-bf79b482eb95',
+          assessedAt: '2026-11-12T13:04:07.836Z',
           level: 4,
           levelName: 'Critical',
           label: 'Critical',
@@ -3586,19 +4222,19 @@ export const RESPONSE_EXAMPLES: Record<
             firstReached: [
               {
                 level: 2,
-                at: '2026-11-12T12:00:00Z',
+                at: '2026-11-12T14:00:00Z',
               },
               {
                 level: 3,
-                at: '2026-11-12T12:00:00Z',
+                at: '2026-11-12T14:00:00Z',
               },
               {
                 level: 4,
-                at: '2026-11-12T12:00:00Z',
+                at: '2026-11-12T14:00:00Z',
               },
             ],
             peakLevel: 4,
-            peakAt: '2026-11-12T12:00:00.000Z',
+            peakAt: '2026-11-12T14:00:00.000Z',
             possiblePeakLevel: null,
             possiblePeakAt: null,
             confidence: null,
@@ -3607,10 +4243,10 @@ export const RESPONSE_EXAMPLES: Record<
           treatedAsLevel: 4,
         },
         {
-          workerId: 'db369d50-329a-47ee-98cf-4224caee21e9',
-          workerName: 'W-0306',
-          crewId: '097bbd11-92d6-471b-8165-7b8f59d757bc',
-          assessedAt: '2026-11-12T11:16:35.373Z',
+          workerId: 'a49dc846-88bb-4ce2-8d27-dc11599cf15c',
+          workerName: 'W-0508',
+          crewId: '15022cc6-9081-4cc3-99ca-bf79b482eb95',
+          assessedAt: '2026-11-12T13:04:07.836Z',
           level: 4,
           levelName: 'Critical',
           label: 'Critical',
@@ -3626,19 +4262,19 @@ export const RESPONSE_EXAMPLES: Record<
             firstReached: [
               {
                 level: 2,
-                at: '2026-11-12T12:00:00Z',
+                at: '2026-11-12T14:00:00Z',
               },
               {
                 level: 3,
-                at: '2026-11-12T12:00:00Z',
+                at: '2026-11-12T14:00:00Z',
               },
               {
                 level: 4,
-                at: '2026-11-12T12:00:00Z',
+                at: '2026-11-12T14:00:00Z',
               },
             ],
             peakLevel: 4,
-            peakAt: '2026-11-12T12:00:00.000Z',
+            peakAt: '2026-11-12T14:00:00.000Z',
             possiblePeakLevel: null,
             possiblePeakAt: null,
             confidence: null,
@@ -3725,42 +4361,42 @@ export const RESPONSE_EXAMPLES: Record<
     },
     example: [
       {
-        id: '7b4523cc-29cf-4886-b71b-9fc39e2b38fc',
+        id: 'd2d0aefa-6eaf-457a-a008-e836a76d060b',
         kind: 'first_aid_alert',
         status: 'acknowledged',
-        createdAt: '2026-11-12T11:16:40.838Z',
+        createdAt: '2026-11-12T13:04:12.838Z',
         detailsShared: false,
         symptoms: null,
         note: null,
-        acknowledgedAt: '2026-11-12T11:16:46.695Z',
+        acknowledgedAt: '2026-11-12T13:04:17.663Z',
         resolvedAt: null,
         workerId: 'ebafe8e7-e96c-4787-9928-864a8c9ea587',
         crewId: 'e03b476f-e004-4cb9-80b5-44d2623d550e',
         siteId: 'cce99add-f021-4b38-adff-c4f25f803c1b',
       },
       {
-        id: '68ef9e50-2fb7-4d5a-93a2-a5fa7beae387',
+        id: 'f5675468-2f4a-457f-a1e3-0ba5b7bc7558',
         kind: 'symptom_report',
         status: 'resolved',
-        createdAt: '2026-11-12T11:16:40.832Z',
+        createdAt: '2026-11-12T13:04:12.829Z',
         detailsShared: true,
         symptoms: ['headache', 'dizzy'],
         note: 'Started after lunch',
         acknowledgedAt: null,
-        resolvedAt: '2026-11-12T11:16:46.701Z',
+        resolvedAt: '2026-11-12T13:04:17.677Z',
         workerId: 'ebafe8e7-e96c-4787-9928-864a8c9ea587',
         crewId: 'e03b476f-e004-4cb9-80b5-44d2623d550e',
         siteId: 'cce99add-f021-4b38-adff-c4f25f803c1b',
       },
       {
-        id: 'e7e9eb8b-b2cb-4c99-8e4f-07f016c034d4',
+        id: 'e0601530-c5d0-4fa2-ba6c-6a263dc77146',
         kind: 'first_aid_alert',
         status: 'acknowledged',
-        createdAt: '2026-11-12T11:16:06.590Z',
+        createdAt: '2026-11-12T13:03:14.256Z',
         detailsShared: false,
         symptoms: null,
         note: null,
-        acknowledgedAt: '2026-11-12T11:16:12.684Z',
+        acknowledgedAt: '2026-11-12T13:03:19.194Z',
         resolvedAt: null,
         workerId: 'ebafe8e7-e96c-4787-9928-864a8c9ea587',
         crewId: 'e03b476f-e004-4cb9-80b5-44d2623d550e',
@@ -4747,6 +5383,7 @@ export const RESPONSE_EXAMPLES: Record<
               },
               entityType: {
                 type: 'string',
+                nullable: true,
               },
               entityId: {
                 type: 'string',
@@ -4765,8 +5402,17 @@ export const RESPONSE_EXAMPLES: Record<
                   policyVersion: {
                     type: 'string',
                   },
+                  symptomReportsCleared: {
+                    type: 'integer',
+                  },
+                  fields: {
+                    type: 'array',
+                    items: {
+                      type: 'string',
+                    },
+                  },
                 },
-                required: ['granted', 'purpose', 'policyVersion'],
+                required: [],
                 nullable: true,
               },
             },
@@ -4802,7 +5448,7 @@ export const RESPONSE_EXAMPLES: Record<
       ],
     },
     example: {
-      exportedAt: '2026-11-12T11:16:46.723Z',
+      exportedAt: '2026-11-12T13:04:17.722Z',
       worker: {
         id: 'ebafe8e7-e96c-4787-9928-864a8c9ea587',
         createdAt: '2026-11-12T08:21:11.315Z',
@@ -5216,33 +5862,12 @@ export const RESPONSE_EXAMPLES: Record<
       ],
       recommendations: [
         {
-          id: '8c4bcc54-0edf-4c58-b147-4e4410e04957',
-          createdAt: '2026-11-12T11:16:06.340Z',
-          updatedAt: '2026-11-12T11:16:46.419Z',
-          organizationId: '1083395a-ffd8-4c14-8e69-fbe7416c2587',
-          siteId: 'cce99add-f021-4b38-adff-c4f25f803c1b',
-          riskAssessmentId: '4db36c0b-c3d5-48e3-9ffe-dc443b0c3100',
-          workerId: 'ebafe8e7-e96c-4787-9928-864a8c9ea587',
-          crewId: 'e03b476f-e004-4cb9-80b5-44d2623d550e',
-          audience: 'worker',
-          code: 'worker.engine_action',
-          riskLevel: 4,
-          whatHappened: 'Critical',
-          whyItMatters: 'See your risk details for the reasons.',
-          whoIsAffected: 'You',
-          action:
-            'Stop the activity and move to a cool, shaded area. Follow the site heat emergency procedure.',
-          timing: 'immediate',
-          dueAt: null,
-          status: 'open',
-        },
-        {
           id: 'a53288e3-2ff0-4d5c-98b4-c2dd16fbee34',
           createdAt: '2026-11-12T11:16:06.340Z',
-          updatedAt: '2026-11-12T11:16:46.419Z',
+          updatedAt: '2026-11-12T13:04:17.379Z',
           organizationId: '1083395a-ffd8-4c14-8e69-fbe7416c2587',
           siteId: 'cce99add-f021-4b38-adff-c4f25f803c1b',
-          riskAssessmentId: '4db36c0b-c3d5-48e3-9ffe-dc443b0c3100',
+          riskAssessmentId: '190c0b55-4ecb-4030-a847-86927f97f746',
           workerId: 'ebafe8e7-e96c-4787-9928-864a8c9ea587',
           crewId: 'e03b476f-e004-4cb9-80b5-44d2623d550e',
           audience: 'supervisor',
@@ -5257,21 +5882,42 @@ export const RESPONSE_EXAMPLES: Record<
           dueAt: null,
           status: 'open',
         },
+        {
+          id: '8c4bcc54-0edf-4c58-b147-4e4410e04957',
+          createdAt: '2026-11-12T11:16:06.340Z',
+          updatedAt: '2026-11-12T13:04:17.379Z',
+          organizationId: '1083395a-ffd8-4c14-8e69-fbe7416c2587',
+          siteId: 'cce99add-f021-4b38-adff-c4f25f803c1b',
+          riskAssessmentId: '190c0b55-4ecb-4030-a847-86927f97f746',
+          workerId: 'ebafe8e7-e96c-4787-9928-864a8c9ea587',
+          crewId: 'e03b476f-e004-4cb9-80b5-44d2623d550e',
+          audience: 'worker',
+          code: 'worker.engine_action',
+          riskLevel: 4,
+          whatHappened: 'Critical',
+          whyItMatters: 'See your risk details for the reasons.',
+          whoIsAffected: 'You',
+          action:
+            'Stop the activity and move to a cool, shaded area. Follow the site heat emergency procedure.',
+          timing: 'immediate',
+          dueAt: null,
+          status: 'open',
+        },
       ],
       helpRequests: [
         {
           id: '16e08a6a-4227-4893-af3a-ea948bf2c1b5',
           createdAt: '2026-11-12T11:16:06.584Z',
-          updatedAt: '2026-11-12T11:16:12.690Z',
+          updatedAt: '2026-11-12T13:03:19.244Z',
           organizationId: '1083395a-ffd8-4c14-8e69-fbe7416c2587',
           workerId: 'ebafe8e7-e96c-4787-9928-864a8c9ea587',
           siteId: 'cce99add-f021-4b38-adff-c4f25f803c1b',
           crewId: 'e03b476f-e004-4cb9-80b5-44d2623d550e',
           kind: 'symptom_report',
           status: 'resolved',
-          detailsShared: true,
-          symptoms: ['headache', 'dizzy'],
-          note: 'Started after lunch',
+          detailsShared: false,
+          symptoms: null,
+          note: null,
           acknowledgedByUserId: null,
           acknowledgedAt: null,
           resolvedByUserId: '2c46178a-ecf9-43ab-beb1-2263127b33c0',
@@ -5280,7 +5926,7 @@ export const RESPONSE_EXAMPLES: Record<
         {
           id: 'e7e9eb8b-b2cb-4c99-8e4f-07f016c034d4',
           createdAt: '2026-11-12T11:16:06.590Z',
-          updatedAt: '2026-11-12T11:16:12.686Z',
+          updatedAt: '2026-11-12T13:03:19.244Z',
           organizationId: '1083395a-ffd8-4c14-8e69-fbe7416c2587',
           workerId: 'ebafe8e7-e96c-4787-9928-864a8c9ea587',
           siteId: 'cce99add-f021-4b38-adff-c4f25f803c1b',
@@ -5298,16 +5944,16 @@ export const RESPONSE_EXAMPLES: Record<
         {
           id: '68ef9e50-2fb7-4d5a-93a2-a5fa7beae387',
           createdAt: '2026-11-12T11:16:40.832Z',
-          updatedAt: '2026-11-12T11:16:46.703Z',
+          updatedAt: '2026-11-12T13:03:19.244Z',
           organizationId: '1083395a-ffd8-4c14-8e69-fbe7416c2587',
           workerId: 'ebafe8e7-e96c-4787-9928-864a8c9ea587',
           siteId: 'cce99add-f021-4b38-adff-c4f25f803c1b',
           crewId: 'e03b476f-e004-4cb9-80b5-44d2623d550e',
           kind: 'symptom_report',
           status: 'resolved',
-          detailsShared: true,
-          symptoms: ['headache', 'dizzy'],
-          note: 'Started after lunch',
+          detailsShared: false,
+          symptoms: null,
+          note: null,
           acknowledgedByUserId: null,
           acknowledgedAt: null,
           resolvedByUserId: '2c46178a-ecf9-43ab-beb1-2263127b33c0',
@@ -5327,38 +5973,44 @@ export const RESPONSE_EXAMPLES: Record<
           loggedAt: '2026-11-12T11:16:40.815Z',
           cups: 1,
         },
+        {
+          id: 'd1d1680e-ec48-4a38-9806-62ae2e8ec7ef',
+          workerId: 'ebafe8e7-e96c-4787-9928-864a8c9ea587',
+          loggedAt: '2026-11-12T13:01:24.692Z',
+          cups: 1,
+        },
       ],
       wearableDevice: {
         workerId: 'ebafe8e7-e96c-4787-9928-864a8c9ea587',
         deviceId: 'band-docs-0388',
         model: 'HeatGuard band simulator',
-        pairedAt: '2026-11-12T11:16:40.823Z',
-        lastSeenAt: '2026-11-12T11:16:40.826Z',
+        pairedAt: '2026-11-12T13:04:12.849Z',
+        lastSeenAt: '2026-11-12T13:04:12.852Z',
         batteryPercent: 81,
       },
       wearableReadings: [
         {
-          id: '34ae8e3d-95b6-4092-938b-f4974072b29c',
+          id: 'b11e2457-93c2-48c8-bb69-f2892c24e1be',
           workerId: 'ebafe8e7-e96c-4787-9928-864a8c9ea587',
-          at: '2026-11-12T11:12:40.826Z',
+          at: '2026-11-12T13:00:12.852Z',
           values: {
             heartRateBpm: 118,
             skinTempC: 35.1,
           },
         },
         {
-          id: '90c80e81-532e-401b-8b09-f5cb5c8ed947',
+          id: '0d33b834-e3d8-481a-a91f-c66bfe666e74',
           workerId: 'ebafe8e7-e96c-4787-9928-864a8c9ea587',
-          at: '2026-11-12T11:13:40.826Z',
+          at: '2026-11-12T13:01:12.852Z',
           values: {
             heartRateBpm: 121,
             skinTempC: 35.2,
           },
         },
         {
-          id: '87964c6b-87ba-48da-9a4d-7b143855537c',
+          id: '5fd67c86-9a34-48ef-a271-db44c09428e4',
           workerId: 'ebafe8e7-e96c-4787-9928-864a8c9ea587',
-          at: '2026-11-12T11:14:40.826Z',
+          at: '2026-11-12T13:02:12.852Z',
           values: {
             heartRateBpm: 124,
             skinTempC: 35.300000000000004,
@@ -5615,7 +6267,7 @@ export const RESPONSE_EXAMPLES: Record<
     example: {
       workerId: '44eb3f5f-89e0-4248-af5d-3f7eed19aaa8',
       workerName: 'W-0412',
-      assessedAt: '2026-11-12T11:16:35.373Z',
+      assessedAt: '2026-11-12T13:04:07.836Z',
       level: 4,
       levelName: 'Critical',
       label: 'Critical',
@@ -5632,14 +6284,14 @@ export const RESPONSE_EXAMPLES: Record<
         },
         {
           factor: 'heat',
-          effect: 'The heat is 4.3 °C over the safe line for your work.',
+          effect: 'The heat is 5.2 °C over the safe line for your work.',
         },
       ],
       action: {
         what: 'Stop the activity and move to a cool, shaded area. Follow the site heat emergency procedure.',
         when: 'immediately',
       },
-      wbgtC: 30.5,
+      wbgtC: 31.4,
       wbgtSource: 'estimated',
       dataQuality: 'ok',
       ppeNotModelled: [],
@@ -5647,56 +6299,43 @@ export const RESPONSE_EXAMPLES: Record<
       forecast: {
         firstReached: [
           {
-            at: '2026-11-12T12:00:00Z',
+            at: '2026-11-12T14:00:00Z',
             label: 'Elevated',
             level: 2,
           },
           {
-            at: '2026-11-12T12:00:00Z',
+            at: '2026-11-12T14:00:00Z',
             label: 'High',
             level: 3,
           },
           {
-            at: '2026-11-12T12:00:00Z',
+            at: '2026-11-12T14:00:00Z',
             label: 'Critical',
             level: 4,
           },
         ],
         peakLevel: 4,
-        peakAt: '2026-11-12T12:00:00.000Z',
+        peakAt: '2026-11-12T14:00:00.000Z',
         possiblePeakLevel: null,
         possiblePeakAt: null,
         confidence: null,
         confidenceNote: null,
         hours: [
           {
-            at: '2026-11-12T12:00:00Z',
-            label: 'Critical',
-            level: 4,
-            action: {
-              what: 'Stop the activity and move to a cool, shaded area. Follow the site heat emergency procedure.',
-              when: 'immediately',
-            },
-            confidence: null,
-            dataQuality: 'ok',
-            possibleLabel: null,
-            possibleLevel: null,
-          },
-          {
-            at: '2026-11-12T13:00:00Z',
-            label: 'Critical',
-            level: 4,
-            action: {
-              what: 'Stop the activity and move to a cool, shaded area. Follow the site heat emergency procedure.',
-              when: 'immediately',
-            },
-            confidence: null,
-            dataQuality: 'ok',
-            possibleLabel: null,
-            possibleLevel: null,
-          },
-          {
             at: '2026-11-12T14:00:00Z',
+            label: 'Critical',
+            level: 4,
+            action: {
+              what: 'Stop the activity and move to a cool, shaded area. Follow the site heat emergency procedure.',
+              when: 'immediately',
+            },
+            confidence: null,
+            dataQuality: 'ok',
+            possibleLabel: null,
+            possibleLevel: null,
+          },
+          {
+            at: '2026-11-12T15:00:00Z',
             label: 'Critical',
             level: 4,
             action: {
@@ -5777,7 +6416,7 @@ export const RESPONSE_EXAMPLES: Record<
     },
     example: {
       summary: {
-        measuredAt: '2026-11-12T11:16:40.826Z',
+        measuredAt: '2026-11-12T13:04:12.852Z',
         heartRateBpm: 130,
         heartRateAvg10MinBpm: 124,
         minutesHeartRateAtOrAbove120: 4,
@@ -5787,21 +6426,303 @@ export const RESPONSE_EXAMPLES: Record<
       },
       readings: [
         {
-          at: '2026-11-12T11:12:40.826Z',
+          at: '2026-11-12T13:00:12.852Z',
           heartRateBpm: 118,
           skinTempC: 35.1,
         },
         {
-          at: '2026-11-12T11:13:40.826Z',
+          at: '2026-11-12T13:01:12.852Z',
           heartRateBpm: 121,
           skinTempC: 35.2,
         },
         {
-          at: '2026-11-12T11:14:40.826Z',
+          at: '2026-11-12T13:02:12.852Z',
           heartRateBpm: 124,
           skinTempC: 35.300000000000004,
         },
       ],
+    },
+  },
+  'patch /api/v1/me/preferences': {
+    status: 200,
+    schema: {
+      type: 'object',
+      properties: {
+        user: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              format: 'uuid',
+            },
+            loginId: {
+              type: 'string',
+            },
+            role: {
+              type: 'string',
+            },
+          },
+          required: ['id', 'loginId', 'role'],
+        },
+        worker: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              format: 'uuid',
+            },
+            employeeCode: {
+              type: 'string',
+            },
+            displayName: {
+              type: 'string',
+            },
+            crew: {
+              type: 'object',
+              properties: {
+                id: {
+                  type: 'string',
+                  format: 'uuid',
+                },
+                name: {
+                  type: 'string',
+                },
+              },
+              required: ['id', 'name'],
+            },
+            language: {
+              type: 'string',
+            },
+            readAloud: {
+              type: 'boolean',
+            },
+            acclimatization: {
+              type: 'object',
+              properties: {
+                acclimatized: {
+                  type: 'boolean',
+                },
+                startedOn: {
+                  type: 'string',
+                  format: 'date',
+                },
+                daysSinceStart: {
+                  type: 'integer',
+                },
+              },
+              required: ['acclimatized', 'startedOn', 'daysSinceStart'],
+            },
+          },
+          required: [
+            'id',
+            'employeeCode',
+            'displayName',
+            'crew',
+            'language',
+            'readAloud',
+            'acclimatization',
+          ],
+        },
+        site: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              format: 'uuid',
+            },
+            name: {
+              type: 'string',
+            },
+            timezone: {
+              type: 'string',
+            },
+            emergencyNumber: {
+              type: 'string',
+            },
+            shifts: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  end: {
+                    type: 'string',
+                  },
+                  name: {
+                    type: 'string',
+                  },
+                  start: {
+                    type: 'string',
+                  },
+                },
+                required: ['end', 'name', 'start'],
+              },
+            },
+          },
+          required: ['id', 'name', 'timezone', 'emergencyNumber', 'shifts'],
+        },
+        assignment: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              format: 'uuid',
+            },
+            siteId: {
+              type: 'string',
+              format: 'uuid',
+            },
+            activity: {
+              type: 'object',
+              properties: {
+                code: {
+                  type: 'string',
+                },
+                name: {
+                  type: 'string',
+                },
+              },
+              required: ['code', 'name'],
+            },
+            workload: {
+              type: 'string',
+            },
+            workEnvironment: {
+              type: 'string',
+            },
+            startsAt: {
+              type: 'string',
+              format: 'date-time',
+            },
+            endsAt: {
+              type: 'string',
+              format: 'date-time',
+            },
+            plannedBreaks: {
+              type: 'array',
+              items: {
+                type: 'string',
+                format: 'date-time',
+              },
+            },
+            breakMinutes: {
+              type: 'integer',
+            },
+            clockedInAt: {
+              nullable: true,
+            },
+            clockedOutAt: {
+              nullable: true,
+            },
+            onBreakSince: {
+              nullable: true,
+            },
+            lastBreakEndedAt: {
+              nullable: true,
+            },
+          },
+          required: [
+            'id',
+            'siteId',
+            'activity',
+            'workload',
+            'workEnvironment',
+            'startsAt',
+            'endsAt',
+            'plannedBreaks',
+            'breakMinutes',
+            'clockedInAt',
+            'clockedOutAt',
+            'onBreakSince',
+            'lastBreakEndedAt',
+          ],
+        },
+        consents: {
+          type: 'object',
+          properties: {
+            healthPrecautions: {
+              type: 'boolean',
+            },
+            wearableBand: {
+              type: 'boolean',
+            },
+            symptomReports: {
+              type: 'boolean',
+            },
+          },
+          required: ['healthPrecautions', 'wearableBand', 'symptomReports'],
+        },
+        precaution: {
+          nullable: true,
+        },
+      },
+      required: [
+        'user',
+        'worker',
+        'site',
+        'assignment',
+        'consents',
+        'precaution',
+      ],
+    },
+    example: {
+      user: {
+        id: 'c926084a-fcce-4680-8f5d-7347569a7888',
+        loginId: 'W-0301',
+        role: 'worker',
+      },
+      worker: {
+        id: '7682d995-486f-442d-b4ef-4e64163898ae',
+        employeeCode: 'W-0301',
+        displayName: 'W-0301',
+        crew: {
+          id: '097bbd11-92d6-471b-8165-7b8f59d757bc',
+          name: 'Crew A',
+        },
+        language: 'en',
+        readAloud: false,
+        acclimatization: {
+          acclimatized: false,
+          startedOn: '2026-11-12',
+          daysSinceStart: 0,
+        },
+      },
+      site: {
+        id: 'cce99add-f021-4b38-adff-c4f25f803c1b',
+        name: 'Abuja Demo Site',
+        timezone: 'Africa/Lagos',
+        emergencyNumber: '112',
+        shifts: [
+          {
+            end: '17:00',
+            name: 'Day shift',
+            start: '07:00',
+          },
+        ],
+      },
+      assignment: {
+        id: '12df2424-c203-4dae-82b7-abd998c2b0d8',
+        siteId: 'cce99add-f021-4b38-adff-c4f25f803c1b',
+        activity: {
+          code: 'concrete_work',
+          name: 'Concrete work',
+        },
+        workload: 'heavy',
+        workEnvironment: 'direct_sun',
+        startsAt: '2026-11-12T06:00:00.000Z',
+        endsAt: '2026-11-12T16:00:00.000Z',
+        plannedBreaks: ['2026-11-12T10:00:00.000Z', '2026-11-12T13:00:00.000Z'],
+        breakMinutes: 15,
+        clockedInAt: null,
+        clockedOutAt: null,
+        onBreakSince: null,
+        lastBreakEndedAt: null,
+      },
+      consents: {
+        healthPrecautions: false,
+        wearableBand: false,
+        symptomReports: false,
+      },
+      precaution: null,
     },
   },
   'post /api/v1/auth/login': {
@@ -5862,9 +6783,9 @@ export const RESPONSE_EXAMPLES: Record<
       required: ['id', 'status', 'acknowledgedAt'],
     },
     example: {
-      id: '7b4523cc-29cf-4886-b71b-9fc39e2b38fc',
+      id: 'd2d0aefa-6eaf-457a-a008-e836a76d060b',
       status: 'acknowledged',
-      acknowledgedAt: '2026-11-12T11:16:46.695Z',
+      acknowledgedAt: '2026-11-12T13:04:17.663Z',
     },
   },
   'post /api/v1/help-requests/{id}/resolve': {
@@ -5887,9 +6808,9 @@ export const RESPONSE_EXAMPLES: Record<
       required: ['id', 'status', 'resolvedAt'],
     },
     example: {
-      id: '68ef9e50-2fb7-4d5a-93a2-a5fa7beae387',
+      id: 'f5675468-2f4a-457f-a1e3-0ba5b7bc7558',
       status: 'resolved',
-      resolvedAt: '2026-11-12T11:16:46.701Z',
+      resolvedAt: '2026-11-12T13:04:17.677Z',
     },
   },
   'post /api/v1/me/first-aid-alert': {
@@ -5940,10 +6861,10 @@ export const RESPONSE_EXAMPLES: Record<
       ],
     },
     example: {
-      id: '7b4523cc-29cf-4886-b71b-9fc39e2b38fc',
+      id: 'd2d0aefa-6eaf-457a-a008-e836a76d060b',
       kind: 'first_aid_alert',
       status: 'open',
-      createdAt: '2026-11-12T11:16:40.838Z',
+      createdAt: '2026-11-12T13:04:12.838Z',
       detailsShared: false,
       symptoms: null,
       note: null,
@@ -6017,10 +6938,10 @@ export const RESPONSE_EXAMPLES: Record<
       ],
     },
     example: {
-      id: '68ef9e50-2fb7-4d5a-93a2-a5fa7beae387',
+      id: 'f5675468-2f4a-457f-a1e3-0ba5b7bc7558',
       kind: 'symptom_report',
       status: 'open',
-      createdAt: '2026-11-12T11:16:40.832Z',
+      createdAt: '2026-11-12T13:04:12.829Z',
       detailsShared: true,
       symptoms: ['headache', 'dizzy'],
       note: 'Started after lunch',
@@ -6044,8 +6965,8 @@ export const RESPONSE_EXAMPLES: Record<
       required: ['cupsToday', 'lastCupAt'],
     },
     example: {
-      cupsToday: 2,
-      lastCupAt: '2026-11-12T11:16:40.815Z',
+      cupsToday: 6,
+      lastCupAt: '2026-11-12T13:04:12.799Z',
     },
   },
   'post /api/v1/me/wearable/readings': {
@@ -6082,7 +7003,7 @@ export const RESPONSE_EXAMPLES: Record<
       required: ['assessedAt', 'assessed', 'fallback'],
     },
     example: {
-      assessedAt: '2026-11-12T11:16:35.373Z',
+      assessedAt: '2026-11-12T13:04:07.836Z',
       assessed: 29,
       fallback: 0,
     },
@@ -6279,7 +7200,7 @@ export const RESPONSE_EXAMPLES: Record<
       date: '2026-11-12',
       status: 'sent',
       source: 'saved',
-      sentAt: '2026-11-12T11:16:40.942Z',
+      sentAt: '2026-11-12T13:04:13.013Z',
       hours: [
         {
           label: '07:00',
@@ -6405,9 +7326,9 @@ export const RESPONSE_EXAMPLES: Record<
       ],
     },
     example: {
-      id: '74478297-02c1-4688-a343-269f216c8f59',
+      id: '06eb3735-87d1-43f5-83c3-09794cc4475d',
       organizationId: '1083395a-ffd8-4c14-8e69-fbe7416c2587',
-      loginId: 'O-DOC-MWDGD5KA',
+      loginId: 'O-DOC-MWDK7ET3',
       email: null,
       role: 'occupational_health',
       workerId: null,
@@ -6676,7 +7597,7 @@ export const RESPONSE_EXAMPLES: Record<
       date: '2026-11-12',
       status: 'draft',
       source: 'saved',
-      sentAt: '2026-11-12T11:16:06.733Z',
+      sentAt: '2026-11-12T13:03:14.390Z',
       hours: [
         {
           label: '07:00',
@@ -6775,6 +7696,30 @@ export const RESPONSE_EXAMPLES: Record<
     },
     example: {
       reset: true,
+    },
+  },
+  'put /api/v1/workers/{workerId}/acclimatization': {
+    status: 200,
+    schema: {
+      type: 'object',
+      properties: {
+        acclimatized: {
+          type: 'boolean',
+        },
+        startedOn: {
+          type: 'string',
+          format: 'date',
+        },
+        daysSinceStart: {
+          type: 'integer',
+        },
+      },
+      required: ['acclimatized', 'startedOn', 'daysSinceStart'],
+    },
+    example: {
+      acclimatized: false,
+      startedOn: '2026-11-12',
+      daysSinceStart: 0,
     },
   },
 };

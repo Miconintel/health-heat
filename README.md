@@ -185,6 +185,7 @@ workers · shifts/breaks · PPE · precaution ─┼─► risk-engine (orchestr
 | `ENGINE_TIMEOUT_MS` | `60000` | A sleeping Render instance takes 20–60 s to wake |
 | `ENGINE_KEEPALIVE` | `false` | Pings `/health` every 10 min so the free plan doesn't sleep |
 | `ENGINE_WBGT_ENABLED` | `true` | WBGT from the engine's `POST /v1/wbgt` (Liljegren). `false` stores weather without WBGT |
+| `ACCLIMATIZATION_ABSENCE_DAYS` | `7` | A worker with no shift for this many days starts acclimatising again (14 days); the change is audited. `0` turns it off |
 | `WEARABLES_ENABLED` | `false` | Band feature: pairing, readings, "Your band", supervisor connected count |
 | `ENGINE_SUPPORTS_WEARABLES` | `false` | Send band summaries to the engine (engine request #5); needs `WEARABLES_ENABLED` too |
 | `ENGINE_SUPPORTS_HOOD` | `false` | Send the `hood` field. Turn on when the engine accepts it, because it 422s on unknown fields |

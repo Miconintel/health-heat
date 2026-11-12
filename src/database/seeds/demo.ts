@@ -331,19 +331,19 @@ async function seedDemo() {
         ),
       );
     }
-    if (!(await m.existsBy(HealthProfile, { workerId: worker.id }))) {
-      await m.save(
-        m.create(HealthProfile, {
-          workerId: worker.id,
-          medicalHistory: [],
-          ...f.profile,
-          approvedByUserId: oh.id,
-          approvedAt: new Date(),
-          nextReviewOn: addDays(today, 28),
-          reviewRequested: false,
-        }),
-      );
-    }
+    // Reset on every run, so the demo starts from the same precautions each day.
+    const existing = await m.findOneBy(HealthProfile, { workerId: worker.id });
+    await m.save(
+      m.merge(HealthProfile, existing ?? m.create(HealthProfile), {
+        workerId: worker.id,
+        medicalHistory: existing?.medicalHistory ?? [],
+        ...f.profile,
+        approvedByUserId: oh.id,
+        approvedAt: new Date(),
+        nextReviewOn: addDays(today, 28),
+        reviewRequested: false,
+      }),
+    );
   }
 
   const workerCount = CREWS.reduce((n, c) => n + c.workerCodes.length, 0);

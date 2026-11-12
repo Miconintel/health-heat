@@ -3,10 +3,12 @@ import { RecommendationStatus } from '../../common/enums';
 /**
  * Pure calculations for "Today so far", "Last 7 days" and the Measures page.
  *
- * Forecast-accuracy measures (lead time, false alarms, missed warnings) use a
- * PROVISIONAL definition until the AI team confirms one (decision D6):
+ * Forecast-accuracy measures (lead time, false alarms, missed warnings). Definition
+ * accepted by the engine owner on 12 Nov 2026 (their evaluation on real Abuja weather
+ * uses the same one). It stays `provisional: true` until they share their results.
  * - a "High period" is a run of consecutive hours whose observed site level was High or above;
- * - it was "warned" if a forecast said High or above for its first hour before that hour began;
+ * - it was "warned" if a forecast said High or above (a definite level; a "possible"
+ *   level does not count) for its first hour before that hour began;
  * - lead time = first hour start − first warning time;
  * - a "warning period" is a run of past hours that had a warning; it is a false alarm
  *   when none of its hours was observed at High or above.
