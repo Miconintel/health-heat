@@ -2,6 +2,9 @@ export interface WeatherObservation {
   time: Date;
   isForecast: boolean;
   airTempC: number | null;
+  /** Dew point at 2 m, °C (the engine's WBGT model uses this, not relative humidity). */
+  dewPointC: number | null;
+  /** Kept for display; not sent to the engine. */
   relativeHumidity: number | null;
   /** Global horizontal irradiance (shortwave), W/m². */
   solarRadiationWm2: number | null;
@@ -9,7 +12,9 @@ export interface WeatherObservation {
   directRadiationWm2: number | null;
   /** Diffuse part of the solar radiation, W/m². */
   diffuseRadiationWm2: number | null;
-  /** Wind speed measured at 10 m, m/s. */
+  /** Wind speed at 10 m, km/h (Open-Meteo's default unit; what the engine wants). */
+  windSpeedKmh: number | null;
+  /** The same wind in m/s, as stored in readings. */
   windSpeedMs: number | null;
   surfacePressureHpa: number | null;
   precipitationMm: number | null;

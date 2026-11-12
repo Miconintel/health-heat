@@ -129,40 +129,50 @@ export interface WorkerForecast {
 
 export type EngineRule = Record<string, unknown>;
 
-// ---- WBGT from weather (route being built by the engine owner) ----------------
-// Contract agreed in README "Proposed /v1/wbgt contract". Liljegren et al. (2008).
+// ---- WBGT from weather: POST /v1/wbgt ----------------------------------------
+// Live engine schema (openapi.json) and AI_BACKEND_GUIDE.md section 10. Liljegren (2008).
+// The engine rejects unknown fields (422), and every weather field must be present (null if missing).
 
 export interface WbgtWeatherHour {
   /** ISO 8601 with timezone. */
-  timestamp: string;
-  air_temp_c: number | null;
-  relative_humidity: number | null;
-  /** Global horizontal (shortwave) irradiance, W/m². */
-  shortwave_radiation_wm2: number | null;
-  direct_radiation_wm2: number | null;
-  diffuse_radiation_wm2: number | null;
-  wind_speed_ms: number | null;
-  /** Height the wind was measured at (Open-Meteo: 10 m). */
-  wind_height_m: number;
+  time: string;
+  /** Open-Meteo temperature_2m, °C (-40 to 60). */
+  temperature_2m_c: number | null;
+  /** Open-Meteo dew_point_2m, °C (-40 to 60). */
+  dew_point_2m_c: number | null;
+  /** Open-Meteo surface_pressure (not pressure_msl), hPa (500 to 1100). */
   surface_pressure_hpa: number | null;
+  /** Open-Meteo wind_speed_10m in km/h, the default unit (0 to 250). */
+  wind_speed_10m_kmh: number | null;
+  /** Open-Meteo shortwave_radiation, W/m² (0 to 1500). */
+  shortwave_radiation_wm2: number | null;
+  /** Minutes the radiation is averaged over: 60 for hourly data (default), 15 for Open-Meteo `current`. */
+  radiation_period_min?: 15 | 60;
 }
 
 export interface WbgtRequest {
   latitude: number;
   longitude: number;
-  /** 1–25 entries, oldest first, no repeats. */
+  /** 1 to 400 hours, one site. */
   hours: WbgtWeatherHour[];
 }
 
 export interface WbgtHourResult {
-  timestamp: string;
-  /** Null when the inputs for that hour were insufficient. */
-  wbgt_sun_c: number | null;
-  wbgt_shade_c: number | null;
+  time: string;
+  /** WBGT in full sun, °C. Null when a weather value was null or the model could not compute it. */
+  wbgt_c: number | null;
+  wbgt_source?: 'estimated';
+  /** 'degraded' when wbgt_c is null. */
+  data_quality: EngineDataQuality;
+  /** For checking only. */
+  globe_c: number | null;
+  natural_wet_bulb_c: number | null;
+  wind_2m_ms: number | null;
 }
 
 export interface WbgtResponse {
-  /** e.g. "liljegren-2008"; stored with each reading for traceability. */
-  model: string;
+  /** "liljegren_2008"; stored with each reading for traceability. */
+  method?: string;
+  /** Same order as the request. */
   hours: WbgtHourResult[];
 }

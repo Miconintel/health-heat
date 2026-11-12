@@ -46,11 +46,14 @@ class EnvironmentVariables {
   /** 32 random bytes, base64. Generate with: openssl rand -base64 32 */
   @IsString() HEALTH_DATA_ENCRYPTION_KEY!: string;
 
-  /** Comma-separated browser origins allowed to call the API (no wildcard). */
+  /**
+   * Comma-separated browser origins allowed to call the API. `*` matches one part of a
+   * host name (no dots), used here for the frontend team's Vercel preview deployments.
+   */
   @IsString()
   @IsOptional()
   CORS_ORIGINS: string =
-    'https://heat-guard-nine.vercel.app,http://localhost:5173';
+    'https://heat-guard-nine.vercel.app,http://localhost:5173,https://heat-guard-*-ahmads-projects-727aea25.vercel.app';
 
   @IsString()
   @IsOptional()
@@ -83,10 +86,10 @@ class EnvironmentVariables {
   @IsOptional()
   ENGINE_SUPPORTS_HOOD: boolean = false;
 
-  /** Turn on once the engine's POST /v1/wbgt is live; until then our estimator is used. */
+  /** WBGT from the engine's POST /v1/wbgt (on by default). Off = readings stored without WBGT. */
   @IsBoolean()
   @IsOptional()
-  ENGINE_WBGT_ENABLED: boolean = false;
+  ENGINE_WBGT_ENABLED: boolean = true;
 
   /** Wearable band feature (pairing, readings, display). Off until wanted. */
   @IsBoolean()
@@ -105,7 +108,7 @@ export function validateEnv(config: Record<string, unknown>) {
     WEATHER_POLLING_ENABLED: config.WEATHER_POLLING_ENABLED === 'true',
     ENGINE_KEEPALIVE: config.ENGINE_KEEPALIVE === 'true',
     ENGINE_SUPPORTS_HOOD: config.ENGINE_SUPPORTS_HOOD === 'true',
-    ENGINE_WBGT_ENABLED: config.ENGINE_WBGT_ENABLED === 'true',
+    ENGINE_WBGT_ENABLED: config.ENGINE_WBGT_ENABLED !== 'false',
     WEARABLES_ENABLED: config.WEARABLES_ENABLED === 'true',
     ENGINE_SUPPORTS_WEARABLES: config.ENGINE_SUPPORTS_WEARABLES === 'true',
   };

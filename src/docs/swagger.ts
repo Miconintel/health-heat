@@ -4,6 +4,7 @@ import { ModulesContainer } from '@nestjs/core';
 import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import { IS_PUBLIC_KEY, ROLES_KEY } from '../common/decorators';
 import { Role } from '../common/enums';
+import { RESPONSE_EXAMPLES } from './response-examples';
 
 const API_PREFIX = 'api/v1';
 
@@ -166,6 +167,38 @@ function accessRules(app: INestApplication) {
   return rules;
 }
 
+type Operation = NonNullable<OpenAPIObject['paths'][string]['get']>;
+
+/**
+ * Endpoints that return plain objects have no response class, so Swagger can't describe
+ * them. For those, use the schema and example captured from a real response with the
+ * demo data (`npm run docs:examples`). Endpoints with a response class are left alone.
+ */
+function addCapturedResponse(op: Operation, key: string) {
+  const captured = RESPONSE_EXAMPLES[key];
+  if (!captured) return;
+  const ok = Object.entries(op.responses).filter(([code]) =>
+    code.startsWith('2'),
+  );
+  const documented = ok.some(
+    ([, r]) =>
+      !!r && 'content' in r && !!r.content?.['application/json']?.schema,
+  );
+  if (documented) return;
+  const code = String(captured.status);
+  const existing = op.responses[code] as { description?: string } | undefined;
+  for (const [c] of ok) if (c !== code) delete op.responses[c];
+  op.responses[code] = {
+    description: `${existing?.description || 'OK'}. Schema and example come from a real response with the demo data; arrays in the example are shortened to 3 items.`,
+    content: {
+      'application/json': {
+        schema: captured.schema,
+        example: captured.example,
+      },
+    },
+  };
+}
+
 /** Adds "who can call this" and the common error responses to every operation. */
 function annotate(doc: OpenAPIObject, app: INestApplication) {
   const rules = accessRules(app);
@@ -186,6 +219,7 @@ function annotate(doc: OpenAPIObject, app: INestApplication) {
         op.description = `**Who can call:** ${who}${op.description ? `\n\n${op.description}` : ''}`;
 
       op.responses ??= {};
+      addCapturedResponse(op, `${method} ${path}`);
       if (rule?.public) {
         op.security = [];
       } else {

@@ -3,18 +3,22 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { setupSwagger } from './docs/swagger';
+import { corsOriginMatcher } from './common/cors/cors-origins';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api/v1');
 
   // Only the HeatGuard frontend may call this API from a browser.
-  const origins = (app.get(ConfigService).get<string>('CORS_ORIGINS') ?? '')
-    .split(',')
-    .map((o) => o.trim())
-    .filter(Boolean);
+  // Entries may use `*` for Vercel preview deployments (see corsOriginMatcher).
+  const isAllowed = corsOriginMatcher(
+    app.get(ConfigService).get<string>('CORS_ORIGINS') ?? '',
+  );
   app.enableCors({
-    origin: origins,
+    origin: (
+      origin: string | undefined,
+      cb: (err: Error | null, allow?: boolean) => void,
+    ) => cb(null, isAllowed(origin)),
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Authorization', 'Content-Type'],
     maxAge: 600,

@@ -71,12 +71,12 @@ describe('EngineClient', () => {
 
   it('posts weather to /v1/wbgt with the key', async () => {
     fetchMock.mockResolvedValueOnce(
-      json(200, { model: 'liljegren-2008', hours: [] }),
+      json(200, { method: 'liljegren_2008', hours: [] }),
     );
     await expect(
       client.wbgt({ latitude: 9, longitude: 7, hours: [] }),
     ).resolves.toEqual({
-      model: 'liljegren-2008',
+      method: 'liljegren_2008',
       hours: [],
     });
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
@@ -86,17 +86,17 @@ describe('EngineClient', () => {
     );
   });
 
-  it('keeps the WBGT route off unless enabled', () => {
-    expect(client.wbgtEnabled).toBe(false);
+  it('uses the WBGT route unless switched off', () => {
+    expect(client.wbgtEnabled).toBe(true);
     expect(
       new EngineClient(
         new ConfigService({
           ENGINE_BASE_URL: 'https://e.test',
           ENGINE_API_KEY: 'k',
-          ENGINE_WBGT_ENABLED: true,
+          ENGINE_WBGT_ENABLED: false,
         }),
       ).wbgtEnabled,
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it('sends band data only when both wearable switches are on', () => {

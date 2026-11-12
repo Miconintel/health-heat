@@ -36,7 +36,7 @@ export class EngineClient {
   private readonly timeoutMs: number;
   /** Engine accepts the (proposed) `hood` field. Off until the engine ships it. */
   readonly supportsHood: boolean;
-  /** WBGT is calculated by the engine's /v1/wbgt route instead of our estimator. */
+  /** WBGT comes from the engine's /v1/wbgt route (on unless ENGINE_WBGT_ENABLED=false). */
   readonly wbgtEnabled: boolean;
   /** Engine accepts the (proposed) `wearable` field. */
   readonly supportsWearables: boolean;
@@ -49,7 +49,7 @@ export class EngineClient {
     this.apiKey = config.getOrThrow<string>('ENGINE_API_KEY');
     this.timeoutMs = config.get<number>('ENGINE_TIMEOUT_MS') ?? 60_000;
     this.supportsHood = config.get<boolean>('ENGINE_SUPPORTS_HOOD') === true;
-    this.wbgtEnabled = config.get<boolean>('ENGINE_WBGT_ENABLED') === true;
+    this.wbgtEnabled = config.get<boolean>('ENGINE_WBGT_ENABLED') !== false;
     this.supportsWearables =
       config.get<boolean>('WEARABLES_ENABLED') === true &&
       config.get<boolean>('ENGINE_SUPPORTS_WEARABLES') === true;

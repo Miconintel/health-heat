@@ -42,6 +42,7 @@ Everyone signs in with an **ID and a PIN** (`POST /api/v1/auth/login` with `{ "l
 
 - API: `http://localhost:3000/api/v1` (set `PORT` if 3000 is taken)
 - Swagger: `http://localhost:3000/docs` (non-production only)
+- Response examples in Swagger: endpoints that return plain objects get their schema and example from `src/docs/response-examples.ts`. After changing a response, refresh it against a **local** server on a freshly seeded demo database with `WEARABLES_ENABLED=true`: `npm run docs:examples -- http://localhost:3000/api/v1`, then reseed (it creates test data). It refuses non-localhost URLs.
 
 ## Demo day (Render free plan)
 
@@ -171,12 +172,12 @@ workers · shifts/breaks · PPE · precaution ─┼─► risk-engine (orchestr
 | Variable | Default | Notes |
 | --- | --- | --- |
 | `OPEN_METEO_AIR_QUALITY_URL` | `https://air-quality-api.open-meteo.com/v1/air-quality` | Dust and PM10 for hazards |
-| `CORS_ORIGINS` | `https://heat-guard-nine.vercel.app,http://localhost:5173` | Browser origins allowed to call the API. No wildcard |
+| `CORS_ORIGINS` | `https://heat-guard-nine.vercel.app,http://localhost:5173,https://heat-guard-*-ahmads-projects-727aea25.vercel.app` | Browser origins allowed to call the API. `*` matches one part of a host name (no dots); the last entry allows the frontend team's Vercel previews |
 | `ENGINE_BASE_URL` | `https://heatguard-ai-engine.onrender.com` | |
 | `ENGINE_API_KEY` | (required) | From the engine owner |
 | `ENGINE_TIMEOUT_MS` | `60000` | A sleeping Render instance takes 20–60 s to wake |
 | `ENGINE_KEEPALIVE` | `false` | Pings `/health` every 10 min so the free plan doesn't sleep |
-| `ENGINE_WBGT_ENABLED` | `false` | Use the engine's `POST /v1/wbgt` (Liljegren) for WBGT. Turn on when the route is live |
+| `ENGINE_WBGT_ENABLED` | `true` | WBGT from the engine's `POST /v1/wbgt` (Liljegren). `false` stores weather without WBGT |
 | `WEARABLES_ENABLED` | `false` | Band feature: pairing, readings, "Your band", supervisor connected count |
 | `ENGINE_SUPPORTS_WEARABLES` | `false` | Send band summaries to the engine (engine request #5); needs `WEARABLES_ENABLED` too |
 | `ENGINE_SUPPORTS_HOOD` | `false` | Send the `hood` field. Turn on when the engine accepts it, because it 422s on unknown fields |
@@ -184,11 +185,10 @@ workers · shifts/breaks · PPE · precaution ─┼─► risk-engine (orchestr
 
 ## Open items with the AI team
 
-- **WBGT step: the engine owner is building `POST /v1/wbgt` (Liljegren). Our side is ready.**
-  - With `ENGINE_WBGT_ENABLED=true`, each site refresh sends now plus 12 forecast hours of weather in one call. We store the sun and shade WBGT it returns, labelled `engine/<model>`.
-  - If that call fails, the refresh fails and existing readings are kept. The risk engine then uses `last_known`, or its own staleness rule. We never fall back to a second formula.
-  - Until the route is live, the interim estimator in `environment/wbgt/wbgt-estimator.ts` is used. **Delete it once the route is on.**
-  - Contract below.
+- **WBGT: live, from the engine's `POST /v1/wbgt` (Liljegren).**
+  - Each site refresh sends now plus 12 forecast hours of weather in one call. We store `wbgt_c` (full sun) as `wbgtSunC`, labelled `engine/liljegren_2008`. There is no shade value yet, so every worker gets the sun value (the cautious choice).
+  - A null weather value is sent as null; that hour comes back `wbgt_c: null` and reaches the risk engine as null (its safe fallback).
+  - If the call fails, the refresh fails and existing readings are kept. The risk engine then uses `last_known`, or its own staleness rule. There is no second formula.
 - **Hoods: our side is ready.**
   - PPE items flagged `engineAddon: hood` are detected per worker.
   - While `ENGINE_SUPPORTS_HOOD=false` (default), we don't send the field, because the engine rejects unknown fields with a 422. Instead the assessment records `ppeNotModelled: ["hood"]`, which is shown to the worker and supervisor, and the supervisor PPE-review recommendation fires.
@@ -196,9 +196,9 @@ workers · shifts/breaks · PPE · precaution ─┼─► risk-engine (orchestr
   - Proposal for the engine (see below).
 - **Double-layer clothing** (+3 °C in ACGIH) has no engine class, so it is left out of the catalogue rather than under-rated.
 
-### Proposed `/v1/wbgt` contract (what the backend calls)
+### `/v1/wbgt` contract (what the backend calls)
 
-`POST /v1/wbgt`, with the `X-API-Key` header. Called once per site per weather refresh (hourly).
+Source of truth: the engine's live schema, `https://heatguard-ai-engine.onrender.com/openapi.json` (also `AI_BACKEND_GUIDE.md` section 10). `POST /v1/wbgt` with the `X-API-Key` header, once per site per weather refresh.
 
 ```json
 {
@@ -206,38 +206,24 @@ workers · shifts/breaks · PPE · precaution ─┼─► risk-engine (orchestr
   "longitude": 7.49,
   "hours": [
     {
-      "timestamp": "2026-03-15T13:00:00+01:00",
-      "air_temp_c": 34.1,
-      "relative_humidity": 48,
-      "shortwave_radiation_wm2": 820,
-      "direct_radiation_wm2": 600,
-      "diffuse_radiation_wm2": 220,
-      "wind_speed_ms": 2.3,
-      "wind_height_m": 10,
-      "surface_pressure_hpa": 963
+      "time": "2026-03-15T12:30:00Z",
+      "temperature_2m_c": 33.6,
+      "dew_point_2m_c": 20.0,
+      "surface_pressure_hpa": 960.0,
+      "wind_speed_10m_kmh": 8.0,
+      "shortwave_radiation_wm2": 920.0,
+      "radiation_period_min": 15
     }
   ]
 }
 ```
 
-- `hours`: 1 to 25 entries (the current observation plus up to 24 forecast hours), oldest first, no repeats. The first entry may fall off the hour (Open-Meteo's "current" is 15-minutely).
-- Any weather value can be `null` when Open-Meteo has no data.
-- Wind is measured at 10 m (Open-Meteo), hence `wind_height_m`.
+- Open-Meteo fields: `temperature_2m`, `dew_point_2m`, `surface_pressure` (not `pressure_msl`), `wind_speed_10m` in km/h (default units), `shortwave_radiation`.
+- `radiation_period_min: 15` only on the current observation (Open-Meteo `current` is a 15-minute average); hourly entries use the default 60.
+- Every field must be present; missing values are `null`. Unknown fields are rejected (422).
+- Accepted ranges (schema): temperature and dew point -40 to 60, pressure 500 to 1100, wind 0 to 250 km/h, radiation 0 to 1500, 1 to 400 hours. A value outside its range is sent as `null` so one bad value can't fail the whole site.
 
-Response:
-
-```json
-{
-  "model": "liljegren-2008",
-  "hours": [
-    { "timestamp": "2026-03-15T13:00:00+01:00", "wbgt_sun_c": 31.4, "wbgt_shade_c": 28.2 }
-  ]
-}
-```
-
-- One result per input hour, matched by instant. Any UTC offset is fine.
-- `wbgt_sun_c` / `wbgt_shade_c` may be `null` when the inputs for that hour are insufficient. We then send no WBGT for that hour and the engine is cautious.
-- `model` is stored with every reading for traceability.
+Response: `{ "method": "liljegren_2008", "hours": [{ "time", "wbgt_c", "wbgt_source": "estimated", "data_quality", "globe_c", "natural_wet_bulb_c", "wind_2m_ms" }] }`. We match hours by instant and read only `wbgt_c`.
 
 ### Proposal to the engine owner: `hood`
 

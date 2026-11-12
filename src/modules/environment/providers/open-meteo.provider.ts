@@ -9,6 +9,7 @@ interface OpenMeteoResponse {
 
 const VARS = [
   'temperature_2m',
+  'dew_point_2m',
   'relative_humidity_2m',
   'shortwave_radiation',
   'direct_radiation',
@@ -19,7 +20,10 @@ const VARS = [
   'weather_code',
 ].join(',');
 
-/** https://open-meteo.com – free, no API key. Times requested in UTC. */
+/**
+ * https://open-meteo.com – free, no API key. Times requested in UTC (sent to the engine
+ * with a `Z` offset, which its "ISO 8601 with timezone" accepts). Wind in km/h.
+ */
 @Injectable()
 export class OpenMeteoProvider extends WeatherProvider {
   readonly name = 'open-meteo';
@@ -40,7 +44,7 @@ export class OpenMeteoProvider extends WeatherProvider {
       current: VARS,
       hourly: VARS,
       forecast_hours: String(forecastHours),
-      wind_speed_unit: 'ms',
+      // Default units: wind in km/h, as the engine's /v1/wbgt expects.
       timezone: 'UTC',
     }).toString();
 
@@ -53,6 +57,10 @@ export class OpenMeteoProvider extends WeatherProvider {
 
     const num = (v: unknown) => (typeof v === 'number' ? v : null);
     const utc = (t: unknown) => new Date(`${String(t)}Z`);
+    const ms = (v: unknown) => {
+      const k = num(v);
+      return k === null ? null : Math.round((k / 3.6) * 100) / 100;
+    };
     const out: WeatherObservation[] = [];
 
     if (body.current) {
@@ -61,11 +69,13 @@ export class OpenMeteoProvider extends WeatherProvider {
         time: utc(c.time),
         isForecast: false,
         airTempC: num(c.temperature_2m),
+        dewPointC: num(c.dew_point_2m),
         relativeHumidity: num(c.relative_humidity_2m),
         solarRadiationWm2: num(c.shortwave_radiation),
         directRadiationWm2: num(c.direct_radiation),
         diffuseRadiationWm2: num(c.diffuse_radiation),
-        windSpeedMs: num(c.wind_speed_10m),
+        windSpeedKmh: num(c.wind_speed_10m),
+        windSpeedMs: ms(c.wind_speed_10m),
         surfacePressureHpa: num(c.surface_pressure),
         weatherCode: num(c.weather_code),
         dustUgM3: null,
@@ -80,11 +90,13 @@ export class OpenMeteoProvider extends WeatherProvider {
           time: utc(t),
           isForecast: true,
           airTempC: num(h.temperature_2m?.[i]),
+          dewPointC: num(h.dew_point_2m?.[i]),
           relativeHumidity: num(h.relative_humidity_2m?.[i]),
           solarRadiationWm2: num(h.shortwave_radiation?.[i]),
           directRadiationWm2: num(h.direct_radiation?.[i]),
           diffuseRadiationWm2: num(h.diffuse_radiation?.[i]),
-          windSpeedMs: num(h.wind_speed_10m?.[i]),
+          windSpeedKmh: num(h.wind_speed_10m?.[i]),
+          windSpeedMs: ms(h.wind_speed_10m?.[i]),
           surfacePressureHpa: num(h.surface_pressure?.[i]),
           weatherCode: num(h.weather_code?.[i]),
           dustUgM3: null,

@@ -21,7 +21,6 @@ import {
 import { EngineClient } from '../ai-engine/engine.client';
 import { buildWbgtRequest, matchWbgt } from './wbgt/engine-wbgt';
 import { detectHazards } from './hazards';
-import { estimateWbgt } from './wbgt/wbgt-estimator';
 import { SensorReadingDto } from './dto/environment.dto';
 
 const FORECAST_HOURS = 12;
@@ -40,16 +39,17 @@ export class EnvironmentService {
     private readonly orgs: OrganizationsService,
   ) {}
 
-  /** Pull current + forecast weather, estimate WBGT, replace this site's future forecast rows. */
   /**
    * Pull current + forecast weather, turn it into WBGT, and replace this site's
    * future forecast rows.
    *
-   * WBGT source:
-   * - ENGINE_WBGT_ENABLED=true: the engine's POST /v1/wbgt (Liljegren), one call per site.
-   *   If that call fails the whole refresh fails and existing readings are kept, so the
-   *   risk engine falls back on `last_known` / its staleness rule, never on a second formula.
-   * - otherwise: our interim estimator (to be deleted once the engine route is live).
+   * WBGT comes only from the engine's POST /v1/wbgt (Liljegren), one call per site.
+   * Its `wbgt_c` is full-sun WBGT; there is no shade value, so it is used for every worker
+   * (stored as wbgtSunC, wbgtShadeC left null). A null `wbgt_c` is stored as null and
+   * reaches the engine as null. If the call fails the whole refresh fails and existing
+   * readings are kept, so the risk engine falls back on `last_known` / its staleness
+   * rule, never on a second formula. With ENGINE_WBGT_ENABLED=false readings are stored
+   * without WBGT.
    */
   async refreshSite(site: Site): Promise<EnvironmentalReading[]> {
     const observations = await this.weather.fetch(
@@ -58,32 +58,20 @@ export class EnvironmentService {
       FORECAST_HOURS,
     );
 
-    let wbgtFor: (o: WeatherObservation) => {
-      sunC: number | null;
-      shadeC: number | null;
-      model: string;
-      confidence: Confidence;
+    const matched = this.engine.wbgtEnabled
+      ? matchWbgt(
+          observations,
+          await this.engine.wbgt(
+            buildWbgtRequest(site.latitude, site.longitude, observations),
+          ),
+        )
+      : null;
+    const wbgtFor = (o: WeatherObservation) => {
+      const v = matched?.get(o);
+      return v
+        ? { ...v, model: `engine/${v.model}` }
+        : { wbgtC: null, model: null, confidence: Confidence.LOW };
     };
-    if (this.engine.wbgtEnabled) {
-      const response = await this.engine.wbgt(
-        buildWbgtRequest(site.latitude, site.longitude, observations),
-      );
-      const matched = matchWbgt(observations, response);
-      wbgtFor = (o) => {
-        const v = matched.get(o)!;
-        return { ...v, model: `engine/${v.model}` };
-      };
-    } else {
-      wbgtFor = (o) => {
-        const est = estimateWbgt(o);
-        return {
-          sunC: est.sunC,
-          shadeC: est.shadeC,
-          model: `${this.weather.name}/${est.model}`,
-          confidence: est.confidence,
-        };
-      };
-    }
 
     const rows = observations.map((o) => {
       const w = wbgtFor(o);
@@ -103,8 +91,8 @@ export class EnvironmentService {
         weatherCode: o.weatherCode,
         dustUgM3: o.dustUgM3,
         pm10UgM3: o.pm10UgM3,
-        wbgtSunC: w.sunC,
-        wbgtShadeC: w.shadeC,
+        wbgtSunC: w.wbgtC,
+        wbgtShadeC: null,
         wbgtMethod: WbgtMethod.ESTIMATED,
         wbgtModel: w.model,
         confidence: w.confidence,
@@ -205,7 +193,7 @@ export class EnvironmentService {
         siteId,
         isForecast: false,
         observedAt: LessThan(current?.observedAt ?? now),
-        wbgtShadeC: Not(IsNull()),
+        wbgtSunC: Not(IsNull()),
       },
       order: { observedAt: 'DESC' },
     });

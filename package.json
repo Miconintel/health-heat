@@ -1,7 +1,7 @@
 {
   "name": "heatguard-api",
   "version": "0.0.1",
-  "description": "HeatGuard AI – heat-risk decision support API",
+  "description": "HeatGuard AI \u2013 heat-risk decision support API",
   "author": "",
   "private": true,
   "license": "UNLICENSED",
@@ -26,7 +26,8 @@
     "seed:demo": "ts-node src/database/seeds/demo.ts",
     "seed:demo:now": "SEED_DEMO_SHIFT=now ts-node src/database/seeds/demo.ts",
     "band:simulate": "ts-node src/tools/simulate-band.ts",
-    "precaution:set": "ts-node src/tools/set-precaution.ts"
+    "precaution:set": "ts-node src/tools/set-precaution.ts",
+    "docs:examples": "ts-node src/tools/capture-doc-examples.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
