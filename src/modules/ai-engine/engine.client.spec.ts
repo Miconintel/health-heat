@@ -16,12 +16,18 @@ const json = (status: number, body: unknown) =>
 describe('EngineClient', () => {
   let fetchMock: jest.SpyInstance;
   let client: EngineClient;
+  let sleepSpy: jest.SpyInstance;
 
   beforeEach(() => {
     fetchMock = jest.spyOn(global, 'fetch');
     client = new EngineClient(config);
+    // No real waiting between retries in tests.
+    sleepSpy = jest
+      .spyOn(client as never, 'sleep')
+      .mockResolvedValue(undefined as never);
     jest.spyOn(client['logger'], 'error').mockImplementation(() => undefined);
     jest.spyOn(client['logger'], 'warn').mockImplementation(() => undefined);
+    jest.spyOn(client['logger'], 'log').mockImplementation(() => undefined);
   });
   afterEach(() => fetchMock.mockRestore());
 
@@ -37,18 +43,42 @@ describe('EngineClient', () => {
     );
   });
 
-  it('retries once on a 5xx', async () => {
+  it('retries a 5xx after a pause (Render answers 502 while the engine restarts)', async () => {
     fetchMock
+      .mockResolvedValueOnce(json(502, {}))
       .mockResolvedValueOnce(json(502, {}))
       .mockResolvedValueOnce(json(200, { ok: 1 }));
     await expect(client.assess(body)).resolves.toEqual({ ok: 1 });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(sleepSpy).toHaveBeenCalledTimes(2);
   });
 
-  it('retries once on a network error, then gives up', async () => {
+  it('retries a network error twice, then gives up', async () => {
     fetchMock.mockRejectedValue(new TypeError('fetch failed'));
     await expect(client.assess(body)).rejects.toBeInstanceOf(EngineError);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("summarises Render's HTML error page instead of logging it", async () => {
+    fetchMock.mockImplementation(() =>
+      Promise.resolve(
+        new Response('<!DOCTYPE html><html><head><title>502</title>', {
+          status: 502,
+        }),
+      ),
+    );
+    const err = (await client.assess(body).catch((e: unknown) => e)) as Error;
+    expect(err.message).toContain('HTML error page from the host');
+    expect(err.message).not.toContain('<html');
+  });
+
+  it('warm-up keeps trying until the engine answers', async () => {
+    fetchMock
+      .mockResolvedValueOnce(new Response('<html>', { status: 502 }))
+      .mockRejectedValueOnce(new TypeError('fetch failed'))
+      .mockResolvedValueOnce(json(200, { status: 'ok' }));
+    await expect(client.warmUp()).resolves.toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it.each([401, 422, 503])('does not retry a %i', async (status) => {

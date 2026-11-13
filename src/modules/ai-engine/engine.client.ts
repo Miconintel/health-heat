@@ -23,6 +23,11 @@ export class EngineError extends Error {
 }
 
 const RULES_TTL_MS = 60 * 60_000;
+/** Pauses between attempts of one call: Render answers 502 for a few seconds while the engine restarts. */
+const RETRY_DELAYS_MS = [2_000, 5_000];
+/** How long warm-up keeps trying: a sleeping Render instance takes 20 to 60 s to wake. */
+const WARMUP_MAX_MS = 90_000;
+const WARMUP_DELAYS_MS = [3_000, 5_000, 10_000];
 
 /**
  * HTTP client for the external HeatGuard AI risk engine.
@@ -77,18 +82,41 @@ export class EngineClient {
     return rules;
   }
 
-  /** Wakes the engine (Render free plan sleeps after ~15 min idle). Never throws. */
+  /**
+   * Wakes the engine (Render free plan sleeps after ~15 min idle) and waits until it
+   * answers, for up to 90 s, so a run doesn't send every worker to the fail-safe while
+   * the engine is still starting. Never throws.
+   */
   async warmUp(): Promise<boolean> {
-    try {
-      await this.request('GET', '/health', undefined, {
-        auth: false,
-        retries: 0,
-      });
-      return true;
-    } catch (err) {
-      this.logger.warn(`Engine warm-up failed: ${(err as Error).message}`);
-      return false;
+    const started = Date.now();
+    let waited = 0; // pauses taken; also bounds the loop when time doesn't pass (tests)
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await this.once('GET', '/health', undefined, false);
+        if (attempt > 0)
+          this.logger.log(
+            `Engine awake after ${Math.round((Date.now() - started) / 1000)} s`,
+          );
+        return true;
+      } catch (err) {
+        const wait =
+          WARMUP_DELAYS_MS[Math.min(attempt, WARMUP_DELAYS_MS.length - 1)];
+        const spent = Math.max(Date.now() - started, waited);
+        if (spent + wait > WARMUP_MAX_MS) {
+          this.logger.warn(
+            `Engine warm-up gave up after ${Math.round((Date.now() - started) / 1000)} s: ${(err as Error).message}`,
+          );
+          return false;
+        }
+        waited += wait;
+        await this.sleep(wait);
+      }
     }
+  }
+
+  /** Overridable in tests. */
+  protected sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private async request<T>(
@@ -97,7 +125,7 @@ export class EngineClient {
     body?: unknown,
     opts: { auth?: boolean; retries?: number } = {},
   ): Promise<T> {
-    const retries = opts.retries ?? 1;
+    const retries = opts.retries ?? RETRY_DELAYS_MS.length;
     let lastError: EngineError | null = null;
 
     for (let attempt = 0; attempt <= retries; attempt++) {
@@ -108,7 +136,10 @@ export class EngineClient {
           err instanceof EngineError
             ? err
             : new EngineError((err as Error).message, null, true);
-        if (!lastError.retryable) break;
+        if (!lastError.retryable || attempt === retries) break;
+        await this.sleep(
+          RETRY_DELAYS_MS[Math.min(attempt, RETRY_DELAYS_MS.length - 1)],
+        );
       }
     }
 
@@ -152,7 +183,11 @@ export class EngineClient {
 
     if (!res.ok) {
       // Body of a 422 explains which field was wrong; it never contains the API key.
-      const detail = (await res.text().catch(() => '')).slice(0, 1000);
+      // Render's own error pages are HTML: summarise instead of logging the whole page.
+      const text = await res.text().catch(() => '');
+      const detail = /^\s*</.test(text)
+        ? '(HTML error page from the host: the engine is down, starting or deploying)'
+        : text.slice(0, 1000);
       const retryable = res.status >= 500 && res.status !== 503;
       throw new EngineError(
         `Engine returned ${res.status}: ${detail}`,

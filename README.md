@@ -66,7 +66,7 @@ cron-job.org ──every 10 min──▶ NestJS backend ──every 10 min──
 
 Demo-day checklist:
 1. Backend env on Render: `ENGINE_API_KEY` (real key), `ENGINE_KEEPALIVE=true`, `WEATHER_POLLING_ENABLED=true`. Changing env restarts the service, so do it before people start using the app.
-2. cron-job.org: call `https://<your-backend>.onrender.com/api/v1/health` every 10 minutes.
+2. cron-job.org: call `https://health-heat.onrender.com/api/v1/health` every 10 minutes.
 3. Demo data that morning: `npm run seed:demo` (or `npm run seed:demo:now` outside 07:00 to 17:00 Abuja time).
 4. A minute before presenting, open the backend's `/api/v1/health` and the engine's `/health`.
 5. After the demo, set the two switches back to `false` and pause the cron job, to save Render's free hours.
@@ -180,6 +180,7 @@ workers · shifts/breaks · PPE · precaution ─┼─► risk-engine (orchestr
 | `OPEN_METEO_AIR_QUALITY_URL` | `https://air-quality-api.open-meteo.com/v1/air-quality` | Dust and PM10 for hazards |
 | `CORS_ORIGINS` | `https://heat-guard-nine.vercel.app,http://localhost:5173,https://heat-guard-*-ahmads-projects-727aea25.vercel.app` | Browser origins allowed to call the API. `*` matches one part of a host name (no dots); the last entry allows the frontend team's Vercel previews |
 | `SWAGGER_ENABLED` | (unset) | Swagger at `/docs` and `/docs-json` is on unless `NODE_ENV=production`. Set `true` to keep it on in production (the frontend reads `/docs-json`) |
+| `OPEN_METEO_API_KEY` | (empty) | Optional paid Open-Meteo key. The free API limits requests per internet address, and Render's free servers share theirs, so weather can fail with 429 (the backend retries twice). With a key, also set `OPEN_METEO_BASE_URL=https://customer-api.open-meteo.com/v1/forecast` and `OPEN_METEO_AIR_QUALITY_URL=https://customer-air-quality-api.open-meteo.com/v1/air-quality` |
 | `ENGINE_BASE_URL` | `https://heatguard-ai-engine.onrender.com` | |
 | `ENGINE_API_KEY` | (required) | From the engine owner |
 | `ENGINE_TIMEOUT_MS` | `60000` | A sleeping Render instance takes 20–60 s to wake |
@@ -194,7 +195,7 @@ workers · shifts/breaks · PPE · precaution ─┼─► risk-engine (orchestr
 ## Open items with the AI team
 
 - **WBGT: live, from the engine's `POST /v1/wbgt` (Liljegren).**
-  - Each site refresh sends now plus 12 forecast hours of weather in one call. We store `wbgt_c` (full sun) as `wbgtSunC`, labelled `engine/liljegren_2008`. There is no shade value yet, so every worker gets the sun value (the cautious choice).
+  - Each site refresh sends now plus 24 forecast hours of weather in one call. If a later refresh is refused (Open-Meteo 429 from Render's shared address), the forecast for the current hour is used as "now", so one successful refresh keeps heat values for a whole day. We store `wbgt_c` (full sun) as `wbgtSunC`, labelled `engine/liljegren_2008`. There is no shade value yet, so every worker gets the sun value (the cautious choice).
   - A null weather value is sent as null; that hour comes back `wbgt_c: null` and reaches the risk engine as null (its safe fallback).
   - If the call fails, the refresh fails and existing readings are kept. The risk engine then uses `last_known`, or its own staleness rule. There is no second formula.
 - **Hoods: live (12 Nov).** PPE items flagged `engineAddon: hood` are detected per worker, and we send `hood: true|false` on assess and forecast. The engine adds +1 °C on top of the clothing, including impermeable suits (11 + 1 = 12), so we send it whenever a hood is worn, built into a suit or not. Hard hats don't count. With `ENGINE_SUPPORTS_HOOD=false` we stop sending it and flag `ppeNotModelled: ["hood"]` instead.

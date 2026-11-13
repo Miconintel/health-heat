@@ -23,7 +23,13 @@ import { buildWbgtRequest, matchWbgt } from './wbgt/engine-wbgt';
 import { detectHazards } from './hazards';
 import { SensorReadingDto } from './dto/environment.dto';
 
-const FORECAST_HOURS = 12;
+/**
+ * 24 hours (as in the engine guide), so one successful fetch covers a whole day: if
+ * Open-Meteo later refuses (429 from Render's shared address), the forecast for the
+ * current hour still gives a heat value. See currentConditions.
+ */
+const FORECAST_HOURS = 24;
+const HOUR_MS = 60 * 60_000;
 const SENSOR_MAX_AGE_MS = 30 * 60_000;
 const WEATHER_MAX_AGE_MS = 2 * 60 * 60_000;
 
@@ -145,7 +151,7 @@ export class EnvironmentService {
     );
   }
 
-  /** Best current conditions: a recent sensor reading wins over weather-API estimates. */
+  /** Best current conditions: a sensor reading (30 min), else a weather observation (2 h), else this hour's forecast. */
   async currentConditions(
     siteId: string,
     now = new Date(),
@@ -159,7 +165,7 @@ export class EnvironmentService {
       order: { observedAt: 'DESC' },
     });
     if (sensor) return sensor;
-    return this.readings.findOne({
+    const observation = await this.readings.findOne({
       where: {
         siteId,
         source: ReadingSource.WEATHER_API,
@@ -168,10 +174,25 @@ export class EnvironmentService {
       },
       order: { observedAt: 'DESC' },
     });
+    if (observation) return observation;
+    // No recent observation (e.g. the weather service refused us): use the forecast for
+    // the hour we are in. It comes from the same weather data and the same engine
+    // formula, and is labelled `estimated` like any weather-based value. Its timestamp is
+    // the start of this hour, so the engine still treats it as current (under 60 min).
+    return this.readings.findOne({
+      where: {
+        siteId,
+        source: ReadingSource.WEATHER_API,
+        isForecast: true,
+        observedAt: Between(new Date(now.getTime() - HOUR_MS + 1), now),
+      },
+      order: { observedAt: 'DESC' },
+    });
   }
 
   /**
-   * Readings to send to the risk engine. The engine decides staleness itself
+   * Readings to send to the risk engine. `current` falls back to this hour's forecast
+   * when there is no recent observation (see currentConditions). The engine decides staleness itself
    * (`max_wbgt_age_minutes`), so `current` may be old; we send its timestamp.
    * `lastKnown` is the most recent earlier reading with a WBGT value (engine `last_known`).
    */

@@ -63,6 +63,14 @@ class EnvironmentVariables {
   OPEN_METEO_AIR_QUALITY_URL: string =
     'https://air-quality-api.open-meteo.com/v1/air-quality';
 
+  /**
+   * Optional paid Open-Meteo key. The free API limits requests per internet address, and
+   * Render's free servers share theirs, so the backend can get 429s. With a key, also set
+   * OPEN_METEO_BASE_URL=https://customer-api.open-meteo.com/v1/forecast (and the
+   * customer- air-quality URL). Empty = free API.
+   */
+  @IsOptional() @IsString() OPEN_METEO_API_KEY?: string;
+
   @IsString() OPEN_METEO_BASE_URL: string =
     'https://api.open-meteo.com/v1/forecast';
 

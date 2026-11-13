@@ -20,8 +20,13 @@ const VARS = [
   'weather_code',
 ].join(',');
 
+/** Pauses before retrying a 429 (rate limit) or 5xx. Render's shared outgoing address hits the free limit. */
+const RETRY_DELAYS_MS = [5_000, 15_000];
+const MAX_RETRY_AFTER_MS = 30_000;
+
 /**
- * https://open-meteo.com – free, no API key. Times requested in UTC (sent to the engine
+ * https://open-meteo.com – free without a key; OPEN_METEO_API_KEY (paid plan, with
+ * OPEN_METEO_BASE_URL=https://customer-api.open-meteo.com/v1/forecast) avoids the shared rate limit. Times requested in UTC (sent to the engine
  * with a `Z` offset, which its "ISO 8601 with timezone" accepts). Wind in km/h.
  */
 @Injectable()
@@ -32,13 +37,50 @@ export class OpenMeteoProvider extends WeatherProvider {
     super();
   }
 
+  /** Overridable in tests. */
+  protected sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /** Adds the API key, when there is one. */
+  private withKey(params: Record<string, string>) {
+    const key = this.config.get<string>('OPEN_METEO_API_KEY');
+    return new URLSearchParams(key ? { ...params, apikey: key } : params);
+  }
+
+  /**
+   * GET with retries on 429 and 5xx. The error includes Open-Meteo's own reason
+   * (e.g. "Hourly API request limit exceeded"), never the API key.
+   */
+  private async getJson<T>(url: URL): Promise<T> {
+    for (let attempt = 0; ; attempt++) {
+      const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+      if (res.ok) return (await res.json()) as T;
+      const retryable = res.status === 429 || res.status >= 500;
+      if (!retryable || attempt >= RETRY_DELAYS_MS.length) {
+        const body = (await res.json().catch(() => null)) as {
+          reason?: string;
+        } | null;
+        throw new ServiceUnavailableException(
+          `Weather provider returned ${res.status}${body?.reason ? `: ${body.reason}` : ''}`,
+        );
+      }
+      const retryAfter = Number(res.headers.get('retry-after')) * 1000;
+      await this.sleep(
+        retryAfter > 0
+          ? Math.min(retryAfter, MAX_RETRY_AFTER_MS)
+          : RETRY_DELAYS_MS[attempt],
+      );
+    }
+  }
+
   async fetch(
     latitude: number,
     longitude: number,
     forecastHours: number,
   ): Promise<WeatherObservation[]> {
     const url = new URL(this.config.getOrThrow<string>('OPEN_METEO_BASE_URL'));
-    url.search = new URLSearchParams({
+    url.search = this.withKey({
       latitude: String(latitude),
       longitude: String(longitude),
       current: VARS,
@@ -48,12 +90,7 @@ export class OpenMeteoProvider extends WeatherProvider {
       timezone: 'UTC',
     }).toString();
 
-    const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
-    if (!res.ok)
-      throw new ServiceUnavailableException(
-        `Weather provider returned ${res.status}`,
-      );
-    const body = (await res.json()) as OpenMeteoResponse;
+    const body = await this.getJson<OpenMeteoResponse>(url);
 
     const num = (v: unknown) => (typeof v === 'number' ? v : null);
     const utc = (t: unknown) => new Date(`${String(t)}Z`);
@@ -123,7 +160,7 @@ export class OpenMeteoProvider extends WeatherProvider {
       const url = new URL(
         this.config.getOrThrow<string>('OPEN_METEO_AIR_QUALITY_URL'),
       );
-      url.search = new URLSearchParams({
+      url.search = this.withKey({
         latitude: String(latitude),
         longitude: String(longitude),
         hourly: 'dust,pm10',
