@@ -148,3 +148,14 @@ export function engineHourPlan(
     ]),
   );
 }
+
+/**
+ * The plan to show: the saved one, plus any crew that now has a shift but isn't in it
+ * (e.g. the plan was saved before the day's shifts were created). Saved crews win.
+ */
+export function withNewCrews(
+  saved: Record<string, Task[]> | null | undefined,
+  derived: Record<string, Task[]>,
+): Record<string, Task[]> {
+  return saved ? { ...derived, ...saved } : derived;
+}

@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, LessThan, MoreThan, Repository } from 'typeorm';
 import { AuthUser } from '../../common/decorators';
@@ -26,10 +30,14 @@ import {
   Task,
   TASKS,
   taskForWorkload,
+  withNewCrews,
 } from './plan-rules';
 import { SavePlanDto, SendPlanDto } from './dto/plan.dto';
 
 const HOUR = 3_600_000;
+
+const NO_CREWS =
+  "No crew has a shift in this plan's hours, so there is nothing to plan. Create the day's shifts first.";
 
 const WORKLOAD_ORDER = [
   WorkloadLevel.LIGHT,
@@ -172,8 +180,11 @@ export class PlansService {
       this.dayAssignments(site, date, planHours),
     ]);
     const crewIds = crewRows.map((c) => c.id);
-    const current =
-      saved?.crews ?? this.derive(site, date, planHours, day, crewIds);
+    // A saved plan keeps its crews; crews whose shifts were added later are filled in.
+    const current = withNewCrews(
+      saved?.crews,
+      this.derive(site, date, planHours, day, crewIds),
+    );
 
     const starts = hourInstants(site.timezone, date, planHours);
     const levelRows = await this.siteHeat.range(
@@ -272,6 +283,8 @@ export class PlansService {
       existing?.crews ??
       (await this.get(user, siteId, date, now)).current.tasks;
     plan.crews = { ...base, ...dto.crews };
+    if (Object.keys(plan.crews).length === 0)
+      throw new ConflictException(NO_CREWS);
     plan.status = 'draft';
     plan.updatedByUserId = user.userId;
     await this.plans.save(plan);
@@ -292,6 +305,8 @@ export class PlansService {
     const view = await this.get(user, siteId, dto.date, now);
     const tasks =
       dto.use === 'suggested' ? view.suggested.tasks : view.current.tasks;
+    // Never store an empty plan: it would hide crews whose shifts are added later.
+    if (Object.keys(tasks).length === 0) throw new ConflictException(NO_CREWS);
     const site = await this.orgs.getSite(user.organizationId, siteId);
     const plan =
       (await this.plans.findOneBy({ siteId, date: view.date })) ??

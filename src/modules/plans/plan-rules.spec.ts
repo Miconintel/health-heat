@@ -6,6 +6,7 @@ import {
   rearrangeTasks,
   suggestTasks,
   Task,
+  withNewCrews,
 } from './plan-rules';
 
 // The frontend sample: site levels 07:00 to 16:00 (13:00 and 14:00 possibly Critical).
@@ -99,5 +100,20 @@ describe('engine hours', () => {
       workload: 'light',
       restBreak: true,
     });
+  });
+});
+
+describe('withNewCrews (saved plan + crews added later)', () => {
+  const H: Task[] = ['H', 'B'];
+  const L: Task[] = ['L', 'L'];
+  it('fills in crews that got shifts after the plan was saved', () => {
+    // Saved at night with no crews, then the day's shifts were created.
+    expect(withNewCrews({}, { a: H, b: L })).toEqual({ a: H, b: L });
+  });
+  it("keeps the supervisor's saved tasks over the derived ones", () => {
+    expect(withNewCrews({ a: L }, { a: H, b: L })).toEqual({ a: L, b: L });
+  });
+  it('uses the derived plan when nothing is saved', () => {
+    expect(withNewCrews(undefined, { a: H })).toEqual({ a: H });
   });
 });
