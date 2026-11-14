@@ -1,4 +1,8 @@
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { WeatherObservation, WeatherProvider } from './weather-provider';
 
@@ -20,6 +24,24 @@ const VARS = [
   'weather_code',
 ].join(',');
 
+/**
+ * When a limit named in Open-Meteo's 429 reason resets: daily limits at midnight UTC,
+ * hourly ones at the next full hour. Null for others (e.g. per-minute), which are retried.
+ */
+export function limitResetsAt(reason: string, now: Date): Date | null {
+  if (/daily/i.test(reason)) {
+    const d = new Date(now);
+    d.setUTCHours(24, 0, 0, 0);
+    return d;
+  }
+  if (/hourly/i.test(reason)) {
+    const d = new Date(now);
+    d.setUTCMinutes(60, 0, 0);
+    return d;
+  }
+  return null;
+}
+
 /** Pauses before retrying a 429 (rate limit) or 5xx. Render's shared outgoing address hits the free limit. */
 const RETRY_DELAYS_MS = [5_000, 15_000];
 const MAX_RETRY_AFTER_MS = 30_000;
@@ -32,6 +54,17 @@ const MAX_RETRY_AFTER_MS = 30_000;
 @Injectable()
 export class OpenMeteoProvider extends WeatherProvider {
   readonly name = 'open-meteo';
+  private readonly logger = new Logger(OpenMeteoProvider.name);
+  /**
+   * Set when Open-Meteo says the daily (or hourly) limit is used up: until then we don't
+   * ask at all. Asking again can't succeed, wastes the shared quota and slows every run.
+   */
+  private blockedUntil: { at: Date; reason: string } | null = null;
+
+  /** Overridable in tests. */
+  protected now(): Date {
+    return new Date();
+  }
 
   constructor(private readonly config: ConfigService) {
     super();
@@ -53,17 +86,38 @@ export class OpenMeteoProvider extends WeatherProvider {
    * (e.g. "Hourly API request limit exceeded"), never the API key.
    */
   private async getJson<T>(url: URL): Promise<T> {
+    const blocked = this.blockedUntil;
+    if (blocked && this.now() < blocked.at) {
+      throw new ServiceUnavailableException(
+        `Weather provider skipped until ${blocked.at.toISOString()} (${blocked.reason})`,
+      );
+    }
+    this.blockedUntil = null;
+
     for (let attempt = 0; ; attempt++) {
       const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
       if (res.ok) return (await res.json()) as T;
+      const body = (await res.json().catch(() => null)) as {
+        reason?: string;
+      } | null;
+      const reason = body?.reason ?? '';
+      const message = `Weather provider returned ${res.status}${reason ? `: ${reason}` : ''}`;
+
+      // A daily or hourly limit won't clear in seconds: stop asking until it resets.
+      if (res.status === 429) {
+        const until = limitResetsAt(reason, this.now());
+        if (until) {
+          this.blockedUntil = { at: until, reason };
+          this.logger.warn(
+            `${message} Not asking again until ${until.toISOString()}.`,
+          );
+          throw new ServiceUnavailableException(message);
+        }
+      }
+
       const retryable = res.status === 429 || res.status >= 500;
       if (!retryable || attempt >= RETRY_DELAYS_MS.length) {
-        const body = (await res.json().catch(() => null)) as {
-          reason?: string;
-        } | null;
-        throw new ServiceUnavailableException(
-          `Weather provider returned ${res.status}${body?.reason ? `: ${body.reason}` : ''}`,
-        );
+        throw new ServiceUnavailableException(message);
       }
       const retryAfter = Number(res.headers.get('retry-after')) * 1000;
       await this.sleep(

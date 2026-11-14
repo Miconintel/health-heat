@@ -1,5 +1,5 @@
 import { ConfigService } from '@nestjs/config';
-import { OpenMeteoProvider } from './open-meteo.provider';
+import { limitResetsAt, OpenMeteoProvider } from './open-meteo.provider';
 
 const BASE = {
   OPEN_METEO_BASE_URL: 'https://weather.test/v1/forecast',
@@ -45,11 +45,14 @@ describe('OpenMeteoProvider', () => {
   it("gives up after two retries with Open-Meteo's reason", async () => {
     fetchMock.mockImplementation(() =>
       Promise.resolve(
-        json(429, { error: true, reason: 'Hourly API request limit exceeded' }),
+        json(429, {
+          error: true,
+          reason: 'Minutely API request limit exceeded',
+        }),
       ),
     );
     await expect(make().fetch(9.06, 7.49, 12)).rejects.toThrow(
-      'Weather provider returned 429: Hourly API request limit exceeded',
+      'Weather provider returned 429: Minutely API request limit exceeded',
     );
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
@@ -74,5 +77,53 @@ describe('OpenMeteoProvider', () => {
     await make({ OPEN_METEO_API_KEY: 'k123' }).fetch(9.06, 7.49, 12);
     expect(urls()[0].searchParams.get('apikey')).toBe('k123');
     expect(urls()[1].searchParams.get('apikey')).toBe('k123'); // air quality too
+  });
+
+  it('stops asking after a daily limit until midnight UTC, then asks again', async () => {
+    const p = make();
+    jest.spyOn(p['logger'], 'warn').mockImplementation(() => undefined);
+    let now = new Date('2026-11-13T23:05:00Z'); // 00:05 Abuja
+    jest.spyOn(p as never, 'now').mockImplementation((() => now) as never);
+    fetchMock.mockResolvedValueOnce(
+      json(429, {
+        error: true,
+        reason: 'Daily API request limit exceeded. Please try again tomorrow.',
+      }),
+    );
+    await expect(p.fetch(9.06, 7.49, 24)).rejects.toThrow('Daily API');
+    expect(fetchMock).toHaveBeenCalledTimes(1); // no retries
+
+    now = new Date('2026-11-13T23:50:00Z');
+    await expect(p.fetch(9.06, 7.49, 24)).rejects.toThrow('skipped until');
+    expect(fetchMock).toHaveBeenCalledTimes(1); // didn't even ask
+
+    now = new Date('2026-11-14T00:01:00Z'); // 01:01 Abuja: quota reset
+    fetchMock
+      .mockResolvedValueOnce(json(200, weather))
+      .mockResolvedValue(json(200, { hourly: {} }));
+    await expect(p.fetch(9.06, 7.49, 24)).resolves.toHaveLength(1);
+  });
+});
+
+describe('limitResetsAt', () => {
+  const now = new Date('2026-11-13T23:05:30Z');
+  it('daily limits reset at midnight UTC', () => {
+    expect(limitResetsAt('Daily API request limit exceeded', now)).toEqual(
+      new Date('2026-11-14T00:00:00Z'),
+    );
+  });
+  it('hourly limits at the next full hour', () => {
+    expect(limitResetsAt('Hourly API request limit exceeded', now)).toEqual(
+      new Date('2026-11-14T00:00:00Z'),
+    );
+    expect(
+      limitResetsAt('Hourly limit', new Date('2026-11-13T10:20:00Z')),
+    ).toEqual(new Date('2026-11-13T11:00:00Z'));
+  });
+  it('others (per-minute) are retried instead', () => {
+    expect(
+      limitResetsAt('Minutely API request limit exceeded', now),
+    ).toBeNull();
+    expect(limitResetsAt('', now)).toBeNull();
   });
 });
